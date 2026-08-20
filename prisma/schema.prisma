@@ -1,0 +1,154 @@
+// prisma/schema.prisma
+// TechTribe er poora database schema — PRD Section 6 theke newa, extra fields add kora hoyeche
+// Prisma 7: url is now in prisma.config.ts, not here
+
+datasource db {
+  provider = "mysql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ─── USER MODEL ──────────────────────────────────────────────────────────────
+// Platform e register kora regular user — job seeker ba reviewer
+model User {
+  id             Int          @id @default(autoincrement())
+  fullName       String       @map("full_name")
+  personalEmail  String       @unique @map("personal_email")
+  passwordHash   String       @map("password_hash")
+  role           UserRole     @default(USER)   // USER ba ADMIN role assign kora
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  reviews        Review[]
+  votes          ReviewVote[]
+  claimedCompany Company?     @relation("CompanyClaim")
+
+  @@map("users")
+}
+
+// User role enum — admin panel access er jonno
+enum UserRole {
+  USER
+  ADMIN
+}
+
+// ─── COMPANY MODEL ───────────────────────────────────────────────────────────
+// Directory te thaka Bangladeshi IT firm — admin seed kore ba company claim kore
+model Company {
+  id               Int       @id @default(autoincrement())
+  companyName      String    @map("company_name")
+  websiteDomain    String    @unique @map("website_domain")
+  contactEmail     String?   @map("contact_email")            // company er official email
+  companyDescription String? @db.Text @map("company_description")
+  location         String                                      // short location, e.g. "Agrabad, Chattogram"
+  address          String?   @db.Text                         // full address
+  city             String    @default("Chattogram")           // main city — filter er jonno
+  techStack        String    @map("tech_stack")               // comma-separated stack tags
+  employeeCount    EmployeeCount @default(UNKNOWN) @map("employee_count")
+  foundedYear      Int?      @map("founded_year")
+  logoUrl          String?   @map("logo_url")
+  facebookUrl      String?   @map("facebook_url")
+  linkedinUrl      String?   @map("linkedin_url")
+  phone            String?
+  isVerified       Boolean   @default(false) @map("is_verified") // admin approve korlei true hobe
+  isClaimed        Boolean   @default(false) @map("is_claimed")
+  claimedByUserId  Int?      @unique @map("claimed_by_user_id")
+  notes            String?   @db.Text                         // internal notes (e.g. "remote company")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  claimedByUser    User?     @relation("CompanyClaim", fields: [claimedByUserId], references: [id])
+  reviews          Review[]
+  jobs             Job[]
+
+  @@map("companies")
+}
+
+// Company size enum
+enum EmployeeCount {
+  UNKNOWN
+  ONE_TO_TEN        @map("1-10")
+  ELEVEN_TO_FIFTY   @map("11-50")
+  FIFTY_TO_TWO_HUNDRED @map("51-200")
+  TWO_HUNDRED_PLUS  @map("200+")
+}
+
+// ─── REVIEW MODEL ────────────────────────────────────────────────────────────
+// Verified employee er review — 3 metric te rating + text
+// Privacy note: ip_address column nai — PRD Section 3 enforce kora
+model Review {
+  id               Int          @id @default(autoincrement())
+  userId           Int          @map("user_id")
+  companyId        Int          @map("company_id")
+  workLifeRating   Int          @map("work_life_rating")      // 1-5 scale
+  salaryRating     Int          @map("salary_rating")         // 1-5 scale
+  managementRating Int          @map("management_rating")     // 1-5 scale
+  reviewText       String       @db.Text @map("review_text")
+  isAnonymous      Boolean      @default(true) @map("is_anonymous") // default anonymous — privacy policy
+  voteScore        Int          @default(0) @map("vote_score")      // upvote minus downvote
+  createdAt        DateTime     @default(now()) @map("created_at")
+
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company          Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  votes            ReviewVote[]
+
+  @@map("reviews")
+}
+
+// ─── JOB MODEL ───────────────────────────────────────────────────────────────
+// Claimed company post kore — salary range mandatory
+model Job {
+  id             Int       @id @default(autoincrement())
+  companyId      Int       @map("company_id")
+  jobTitle       String    @map("job_title")
+  jobDescription String    @db.Text @map("job_description")
+  salaryRangeMin Int       @map("salary_range_min")   // BDT — mandatory field
+  salaryRangeMax Int       @map("salary_range_max")   // BDT — mandatory field
+  status         JobStatus @default(DRAFT)             // DRAFT theke PUBLISHED e jaay
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  company        Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("jobs")
+}
+
+// Job status enum — save as draft ba publish
+enum JobStatus {
+  DRAFT
+  PUBLISHED
+}
+
+// ─── REVIEW VOTE MODEL ───────────────────────────────────────────────────────
+// User ekta review e upvote ba downvote dite pare — ektar beshi na
+model ReviewVote {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  reviewId  Int      @map("review_id")
+  voteType  VoteType @map("vote_type")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, reviewId]) // ek user ek review e ektar beshi vote dite parbe na
+  @@map("review_votes")
+}
+
+// Vote type enum
+enum VoteType {
+  UPVOTE
+  DOWNVOTE
+}
+
+// ─── OTP TOKEN MODEL ─────────────────────────────────────────────────────────
+// Corporate email OTP verify er jonno — use korar pore delete hoe jaay
+// corporate email plain text e store kora hoy na — hashed rakha hoy
+model OtpToken {
+  id             Int      @id @default(autoincrement())
+  corporateEmailHash String @map("corporate_email_hash")  // bcrypt hash — plain text na
+  companyId      Int      @map("company_id")
+  otpHash        String   @map("otp_hash")                // 6-digit OTP er bcrypt hash
+  expiresAt      DateTime @map("expires_at")             // 10 minute por expire
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("otp_tokens")
+}

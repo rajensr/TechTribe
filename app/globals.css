@@ -1,0 +1,358 @@
+/* app/globals.css */
+/* TechTribe global styles — CSS variables, base reset, utility classes */
+
+/* ─── GOOGLE FONTS IMPORT ─────────────────────────────────────────────────── */
+/* @import must come before everything else — CSS rule */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@import "tailwindcss";
+
+/* ─── CSS CUSTOM PROPERTIES ───────────────────────────────────────────────── */
+/* DESIGN.md theke newa poora color system — ekhane define, poora app e use */
+:root {
+  /* Primary brand colors */
+  --primary: #003ec7;
+  --primary-container: #0052ff;
+  --primary-tint: #004ced;
+  --on-primary: #ffffff;
+  --on-primary-container: #dfe3ff;
+  --inverse-primary: #b7c4ff;
+  --primary-fixed: #dde1ff;
+  --primary-fixed-dim: #b7c4ff;
+  --on-primary-fixed: #001452;
+  --on-primary-fixed-variant: #0038b6;
+
+  /* Secondary */
+  --secondary: #515f78;
+  --secondary-container: #d2e0fe;
+  --on-secondary: #ffffff;
+  --on-secondary-container: #55637d;
+
+  /* Tertiary */
+  --tertiary: #3f4f65;
+  --tertiary-container: #57677e;
+  --on-tertiary: #ffffff;
+  --on-tertiary-container: #d6e6ff;
+
+  /* Error */
+  --error: #ba1a1a;
+  --error-container: #ffdad6;
+  --on-error: #ffffff;
+  --on-error-container: #93000a;
+
+  /* Surface hierarchy */
+  --surface: #f7f9fb;
+  --surface-dim: #d8dadc;
+  --surface-bright: #f7f9fb;
+  --surface-lowest: #ffffff;
+  --surface-low: #f2f4f6;
+  --surface-container: #eceef0;
+  --surface-high: #e6e8ea;
+  --surface-highest: #e0e3e5;
+  --on-surface: #191c1e;
+  --on-surface-variant: #434656;
+  --inverse-surface: #2d3133;
+  --inverse-on-surface: #eff1f3;
+
+  /* Outline */
+  --outline: #737688;
+  --outline-variant: #c3c5d9;
+
+  /* Surface tint */
+  --surface-tint: #004ced;
+  --surface-variant: #e0e3e5;
+
+  /* Background */
+  --background: #f7f9fb;
+  --on-background: #191c1e;
+
+  /* Elevation shadows */
+  --shadow-card: 0 12px 24px -10px rgba(10, 25, 47, 0.08);
+  --shadow-modal: 0 20px 48px -12px rgba(10, 25, 47, 0.12);
+
+  /* Spacing tokens */
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2.5rem;
+  --spacing-xl: 4rem;
+  --gutter: 24px;
+  --margin-mobile: 16px;
+  --margin-desktop: 48px;
+
+  /* Border radius */
+  --radius-sm: 0.125rem;
+  --radius: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+}
+
+/* ─── BASE RESET ──────────────────────────────────────────────────────────── */
+/* Box sizing, scroll behavior, anti-aliasing */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--on-background);
+  font-family: var(--font-geist, 'Inter', system-ui, sans-serif);
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ─── TYPOGRAPHY BASE ─────────────────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-geist, 'Inter', system-ui, sans-serif);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--on-background);
+}
+
+/* Labels and tags — JetBrains Mono e render hobe */
+.font-mono, code, kbd, .tag, .badge-label {
+  font-family: var(--font-jetbrains-mono, 'JetBrains Mono', monospace);
+}
+
+/* ─── SCROLLBAR STYLING ───────────────────────────────────────────────────── */
+/* Custom scrollbar — premium feel er jonno */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface-low);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--outline-variant);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--outline);
+}
+
+/* ─── UTILITY CLASSES ─────────────────────────────────────────────────────── */
+
+/* Container — 1280px max, centered */
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--margin-mobile);
+  padding-right: var(--margin-mobile);
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding-left: var(--gutter);
+    padding-right: var(--gutter);
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    padding-left: var(--margin-desktop);
+    padding-right: var(--margin-desktop);
+  }
+}
+
+/* ─── BUTTON BASE STYLES ──────────────────────────────────────────────────── */
+/* Primary button — solid blue, DESIGN.md standard */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background-color: var(--primary);
+  color: var(--on-primary);
+  font-family: var(--font-geist, system-ui);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-tint);
+  box-shadow: var(--shadow-card);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Secondary button — outlined */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background-color: transparent;
+  color: var(--primary);
+  font-family: var(--font-geist, system-ui);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--primary);
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn-secondary:hover {
+  background-color: var(--primary-fixed);
+  transform: translateY(-1px);
+}
+
+/* Ghost button — minimal */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background-color: transparent;
+  color: var(--on-surface-variant);
+  font-family: var(--font-geist, system-ui);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  text-decoration: none;
+}
+
+.btn-ghost:hover {
+  background-color: var(--surface-container);
+  color: var(--on-surface);
+}
+
+/* ─── CARD BASE STYLES ────────────────────────────────────────────────────── */
+/* Level 1 elevation — flat with 1px border, shadow on hover */
+.card {
+  background-color: var(--surface-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-card);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+/* ─── INPUT BASE STYLES ───────────────────────────────────────────────────── */
+/* DESIGN.md: light gray bg, 1px border, blue focus ring */
+.input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: #f1f5f9;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius);
+  font-family: var(--font-geist, system-ui);
+  font-size: 16px;
+  color: var(--on-surface);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input::placeholder {
+  color: var(--on-surface-variant);
+  opacity: 0.6;
+}
+
+.input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 62, 199, 0.1); /* 10% opacity blue ring */
+}
+
+/* ─── BADGE / TAG STYLES ──────────────────────────────────────────────────── */
+/* Pill-shaped — DESIGN.md: full radius, primary tint background */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.625rem;
+  background-color: var(--primary-fixed);
+  color: var(--primary);
+  font-family: var(--font-jetbrains-mono, monospace);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0.05em;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Verified badge — blue with checkmark */
+.badge-verified {
+  background-color: #dfe3ff;
+  color: var(--primary);
+}
+
+/* ─── SECTION SPACING ─────────────────────────────────────────────────────── */
+/* Major page sections er beech e xl spacing */
+.section {
+  padding-top: var(--spacing-xl);
+  padding-bottom: var(--spacing-xl);
+}
+
+/* ─── ANIMATIONS ──────────────────────────────────────────────────────────── */
+/* Fade in up — card er entrance animation */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Shimmer — skeleton loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}
+
+/* Skeleton loader — loading state er jonno */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-container) 25%, var(--surface-high) 50%, var(--surface-container) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: var(--radius);
+}
+
+/* ─── FOCUS VISIBLE ───────────────────────────────────────────────────────── */
+/* Keyboard navigation er jonno accessible focus ring */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
