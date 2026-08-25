@@ -1,6 +1,4 @@
-// prisma/prisma.config.ts
-// Prisma CLI configuration file
-
+// prisma.config.ts
 import { defineConfig } from "prisma/config";
 import * as dotenv from "dotenv";
 
