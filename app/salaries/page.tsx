@@ -19,11 +19,12 @@ function formatBDT(amount: number) {
 const CITIES = ["All", "Chattogram", "Dhaka", "Sylhet"];
 
 interface PageProps {
-  searchParams: { city?: string };
+  searchParams: Promise<{ city?: string }>;
 }
 
-export default function SalariesPage({ searchParams }: PageProps) {
-  const { city = "All" } = searchParams;
+export default async function SalariesPage({ searchParams }: PageProps) {
+  const resolvedSearchParams = await searchParams;
+  const { city = "All" } = resolvedSearchParams || {};
 
   // City filter apply kora
   const benchmarks = city === "All"
@@ -93,66 +94,70 @@ export default function SalariesPage({ searchParams }: PageProps) {
 
         {/* ─── SALARY TABLE ────────────────────────────────────────────── */}
         <div className="card overflow-hidden p-0">
-          {/* Table header */}
-          <div className="grid grid-cols-5 gap-4 px-6 py-3 bg-[var(--surface-low)] border-b border-[var(--outline-variant)]">
-            {["Role", "Min Salary", "Max Salary", "City", "Data Points"].map((col) => (
-              <div key={col} className="font-mono text-[10px] font-semibold text-[var(--on-surface-variant)] uppercase tracking-widest">
-                {col}
-              </div>
-            ))}
-          </div>
-
-          {/* Table rows */}
-          {sorted.map((benchmark, idx) => {
-            // Bar width — relative to highest max salary
-            const maxSalary = sorted[0]?.avgMax ?? 1;
-            const barWidth = (benchmark.avgMax / maxSalary) * 100;
-
-            return (
-              <div
-                key={`${benchmark.role}-${idx}`}
-                className="grid grid-cols-5 gap-4 px-6 py-4 border-b border-[var(--outline-variant)] last:border-0 hover:bg-[var(--surface-low)] transition-colors group"
-              >
-                {/* Role name */}
-                <div>
-                  <p className="text-sm font-medium text-[var(--on-surface)]">{benchmark.role}</p>
-                  {/* Mini bar — visual salary indicator */}
-                  <div className="mt-1.5 h-1 bg-[var(--surface-container)] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-[var(--primary)] rounded-full transition-all duration-500"
-                      style={{ width: `${barWidth}%` }}
-                    />
+          <div className="overflow-x-auto">
+            <div className="min-w-[650px]">
+              {/* Table header */}
+              <div className="grid grid-cols-5 gap-4 px-6 py-3 bg-[var(--surface-low)] border-b border-[var(--outline-variant)]">
+                {["Role", "Min Salary", "Max Salary", "City", "Data Points"].map((col) => (
+                  <div key={col} className="font-mono text-[10px] font-semibold text-[var(--on-surface-variant)] uppercase tracking-widest">
+                    {col}
                   </div>
-                </div>
-
-                {/* Min */}
-                <div className="flex items-center">
-                  <span className="font-mono text-sm font-semibold text-[var(--on-surface)]">
-                    {formatBDT(benchmark.avgMin)}
-                  </span>
-                </div>
-
-                {/* Max */}
-                <div className="flex items-center">
-                  <span className="font-mono text-sm font-bold text-[var(--primary)]">
-                    {formatBDT(benchmark.avgMax)}
-                  </span>
-                </div>
-
-                {/* City */}
-                <div className="flex items-center">
-                  <span className="badge">{benchmark.city}</span>
-                </div>
-
-                {/* Sample count */}
-                <div className="flex items-center">
-                  <span className="font-mono text-xs text-[var(--on-surface-variant)]">
-                    {benchmark.sampleCount} reviews
-                  </span>
-                </div>
+                ))}
               </div>
-            );
-          })}
+
+              {/* Table rows */}
+              {sorted.map((benchmark, idx) => {
+                // Bar width — relative to highest max salary
+                const maxSalary = sorted[0]?.avgMax ?? 1;
+                const barWidth = (benchmark.avgMax / maxSalary) * 100;
+
+                return (
+                  <div
+                    key={`${benchmark.role}-${idx}`}
+                    className="grid grid-cols-5 gap-4 px-6 py-4 border-b border-[var(--outline-variant)] last:border-0 hover:bg-[var(--surface-low)] transition-colors group"
+                  >
+                    {/* Role name */}
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--on-surface)]">{benchmark.role}</p>
+                      {/* Mini bar — visual salary indicator */}
+                      <div className="mt-1.5 h-1.5 bg-[var(--surface-container)] rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-[var(--primary)] rounded-full transition-all duration-500"
+                          style={{ width: `${barWidth}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Min */}
+                    <div className="flex items-center">
+                      <span className="font-mono text-sm font-semibold text-[var(--on-surface)]">
+                        {formatBDT(benchmark.avgMin)}
+                      </span>
+                    </div>
+
+                    {/* Max */}
+                    <div className="flex items-center">
+                      <span className="font-mono text-sm font-bold text-[var(--primary)]">
+                        {formatBDT(benchmark.avgMax)}
+                      </span>
+                    </div>
+
+                    {/* City */}
+                    <div className="flex items-center">
+                      <span className="badge">{benchmark.city}</span>
+                    </div>
+
+                    {/* Sample count */}
+                    <div className="flex items-center">
+                      <span className="font-mono text-xs text-[var(--on-surface-variant)]">
+                        {benchmark.sampleCount} reviews
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* ─── DATA DISCLAIMER ─────────────────────────────────────────── */}

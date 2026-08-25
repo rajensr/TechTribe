@@ -18,10 +18,33 @@ export default function DashboardPage() {
   const myReviews = MOCK_REVIEWS.slice(0, 2); // mock: 2 ta review dekhabo
 
   return (
-    <div className="pt-24 pb-16 min-h-screen bg-[var(--background)]">
+    <div className="pb-16 min-h-screen bg-[var(--background)]">
+      {/* ─── MOBILE NAV BAR ──────────────────────────────────────────── */}
+      <div className="lg:hidden bg-white border-b border-[var(--outline-variant)] px-4 py-3 mb-6 overflow-x-auto flex gap-2">
+        {[
+          { label: "Overview", href: "/dashboard", icon: "⊞", active: true },
+          { label: "My Reviews", href: "/dashboard/reviews", icon: "💬" },
+          { label: "Saved Jobs", href: "/dashboard/saved", icon: "💼" },
+          { label: "Settings", href: "/dashboard/settings", icon: "⚙" },
+        ].map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 ${
+              item.active
+                ? "bg-[var(--primary)] text-white"
+                : "bg-[var(--surface-container)] text-[var(--on-surface-variant)]"
+            }`}
+          >
+            <span aria-hidden="true">{item.icon}</span>
+            {item.label}
+          </Link>
+        ))}
+      </div>
+
       <div className="flex">
-        {/* ─── SIDEBAR ──────────────────────────────────────────────────── */}
-        <aside className="hidden lg:flex flex-col w-52 fixed left-0 top-16 h-full border-r border-[var(--outline-variant)] bg-white pt-8 px-4">
+        {/* ─── DESKTOP SIDEBAR ────────────────────────────────────────── */}
+        <aside className="hidden lg:flex flex-col w-52 fixed left-0 top-20 sm:top-24 h-[calc(100vh-5rem)] border-r border-[var(--outline-variant)] bg-white pt-6 px-4">
           <h2 className="font-mono text-[10px] font-semibold text-[var(--on-surface-variant)] uppercase tracking-widest mb-4">
             Professional Dashboard
           </h2>
@@ -32,7 +55,7 @@ export default function DashboardPage() {
               { label: "Saved Jobs", href: "/dashboard/saved", icon: "💼" },
               { label: "Settings", href: "/dashboard/settings", icon: "⚙" },
             ].map((item) => (
-              <a
+              <Link
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-2 px-3 py-2.5 rounded text-sm transition-colors ${
@@ -43,7 +66,7 @@ export default function DashboardPage() {
               >
                 <span aria-hidden="true">{item.icon}</span>
                 {item.label}
-              </a>
+              </Link>
             ))}
           </nav>
         </aside>

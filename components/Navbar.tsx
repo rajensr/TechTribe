@@ -65,7 +65,7 @@ export default function Navbar() {
           </Link>
 
           {/* ─── DESKTOP NAV LINKS ──────────────────────────────────────── */}
-          <ul className="hidden md:flex items-center gap-1" role="list">
+          <ul className="hidden md:flex items-center gap-6" role="list">
             {NAV_LINKS.map((link) => {
               // Active link check — current page highlight
               const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
@@ -73,16 +73,16 @@ export default function Navbar() {
                 <li key={`${link.href}-${link.label}`}>
                   <Link
                     href={link.href}
-                    className={`px-4 py-2 rounded text-sm font-medium transition-colors duration-150 ${
+                    className={`px-3 py-2 rounded text-sm font-semibold transition-colors duration-150 relative ${
                       isActive
-                        ? "text-[var(--primary)] font-semibold"
+                        ? "text-[var(--primary)] font-bold"
                         : "text-[var(--on-surface-variant)] hover:text-[var(--on-surface)] hover:bg-[var(--surface-container)]"
                     }`}
                   >
                     {link.label}
                     {/* Active indicator — bottom border */}
                     {isActive && (
-                      <span className="block h-0.5 bg-[var(--primary)] mt-0.5 rounded-full" />
+                      <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)] rounded-full" />
                     )}
                   </Link>
                 </li>

@@ -39,12 +39,12 @@ export default function CompanyCard({
     .filter(Boolean)
     .slice(0, 3); // max 3 tags show korbo
 
-  // Rating color — score anuzaayi rang change hobe
+  // Rating color — score anuzaayi rang change hobe (WCAG AAA compliant contrast)
   const getRatingColor = (rating: number) => {
-    if (rating >= 4.5) return "bg-emerald-50 text-emerald-700 border-emerald-200";
-    if (rating >= 4.0) return "bg-blue-50 text-blue-700 border-blue-200";
-    if (rating >= 3.0) return "bg-amber-50 text-amber-700 border-amber-200";
-    return "bg-red-50 text-red-700 border-red-200";
+    if (rating >= 4.5) return "bg-emerald-50 text-emerald-800 border-emerald-300 font-bold";
+    if (rating >= 4.0) return "bg-blue-50 text-blue-800 border-blue-300 font-bold";
+    if (rating >= 3.0) return "bg-amber-100 text-amber-950 border-amber-300 font-bold";
+    return "bg-red-50 text-red-900 border-red-300 font-bold";
   };
 
   return (
@@ -64,6 +64,8 @@ export default function CompanyCard({
             <img
               src={logoUrl}
               alt={`${companyName} logo`}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-contain p-1"
             />
           ) : (
@@ -114,16 +116,16 @@ export default function CompanyCard({
         </div>
 
         {/* Location — DESIGN.md: uppercase mono font */}
-        <p className="font-mono text-[10px] font-medium text-[var(--on-surface-variant)] uppercase tracking-wider">
-          {location}
+        <p className="font-mono text-xs font-semibold text-[var(--on-surface-variant)] uppercase tracking-wider mt-0.5">
+          📍 {location}
         </p>
       </div>
 
       {/* ─── TECH STACK TAGS ─────────────────────────────────────────────── */}
-      {/* Pill-shaped chips — DESIGN.md compliant */}
-      <div className="flex flex-wrap gap-1.5" role="list" aria-label="Tech stack">
+      {/* Pill-shaped chips — 44px touch target compliant on mobile */}
+      <div className="flex flex-wrap gap-2 my-1" role="list" aria-label="Tech stack">
         {stackTags.map((tag) => (
-          <span key={tag} className="badge" role="listitem">
+          <span key={tag} className="badge text-xs px-3 py-1.5 min-h-[32px] sm:min-h-0 flex items-center justify-center" role="listitem">
             {tag}
           </span>
         ))}

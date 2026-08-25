@@ -28,16 +28,17 @@ const SORT_OPTIONS = [
 ];
 
 interface PageProps {
-  searchParams: {
+  searchParams: Promise<{
     q?: string;
     city?: string;
     stack?: string;
     sort?: string;
-  };
+  }>;
 }
 
-export default function CompaniesPage({ searchParams }: PageProps) {
-  const { q = "", city = "All", stack = "", sort = "rating" } = searchParams;
+export default async function CompaniesPage({ searchParams }: PageProps) {
+  const resolvedSearchParams = await searchParams;
+  const { q = "", city = "All", stack = "", sort = "rating" } = resolvedSearchParams || {};
 
   // ─── CLIENT-SIDE FILTER LOGIC ────────────────────────────────────────────
   // Backend wire-up korar somoy ekhane API call hobe
@@ -84,8 +85,8 @@ export default function CompaniesPage({ searchParams }: PageProps) {
           <h1 className="text-3xl font-bold text-[var(--on-background)] mb-1">
             IT Company Directory
           </h1>
-          <p className="text-[var(--on-surface-variant)]">
-            {filtered.length} companies found across Bangladesh
+          <p className="text-[var(--on-surface-variant)] text-sm" aria-live="polite">
+            {filtered.length} {filtered.length === 1 ? "company" : "companies"} found across Bangladesh
           </p>
         </div>
 
@@ -95,10 +96,10 @@ export default function CompaniesPage({ searchParams }: PageProps) {
             {/* Search input */}
             <form method="GET" className="mb-6">
               <label htmlFor="search-input" className="font-mono text-[10px] font-semibold text-[var(--on-surface-variant)] uppercase tracking-widest block mb-2">
-                Search
+                Search Companies
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--on-surface-variant)] text-sm" aria-hidden="true">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--on-surface-variant)] text-sm pointer-events-none" aria-hidden="true">
                   🔍
                 </span>
                 <input
@@ -107,7 +108,7 @@ export default function CompaniesPage({ searchParams }: PageProps) {
                   id="search-input"
                   defaultValue={q}
                   placeholder="Company, stack, location..."
-                  className="input pl-9 text-sm"
+                  className="input pl-10 text-sm h-10"
                 />
               </div>
 
@@ -116,7 +117,7 @@ export default function CompaniesPage({ searchParams }: PageProps) {
               {stack && <input type="hidden" name="stack" value={stack} />}
               {sort !== "rating" && <input type="hidden" name="sort" value={sort} />}
 
-              <button type="submit" className="btn-primary w-full mt-3 text-sm">
+              <button type="submit" className="btn-primary w-full mt-3 text-sm h-10 font-semibold">
                 Search
               </button>
             </form>
@@ -126,26 +127,30 @@ export default function CompaniesPage({ searchParams }: PageProps) {
               <h3 className="font-mono text-[10px] font-semibold text-[var(--on-surface-variant)] uppercase tracking-widest mb-3">
                 City
               </h3>
-              <div className="flex flex-col gap-1">
-                {CITIES.map((c) => (
-                  <Link
-                    key={c}
-                    href={`/companies?${new URLSearchParams({
-                      ...(q && { q }),
-                      city: c,
-                      ...(stack && { stack }),
-                      ...(sort !== "rating" && { sort }),
-                    }).toString()}`}
-                    className={`px-3 py-2 rounded text-sm transition-colors ${
-                      city === c || (c === "All" && !city)
-                        ? "bg-[var(--primary-fixed)] text-[var(--primary)] font-semibold"
-                        : "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container)]"
-                    }`}
-                    id={`city-filter-${c.toLowerCase()}`}
-                  >
-                    {c}
-                  </Link>
-                ))}
+              <div className="flex flex-col gap-1.5">
+                {CITIES.map((c) => {
+                  const isActive = city === c || (c === "All" && (!city || city === "All"));
+                  return (
+                    <Link
+                      key={c}
+                      href={`/companies?${new URLSearchParams({
+                        ...(q && { q }),
+                        city: c,
+                        ...(stack && { stack }),
+                        ...(sort !== "rating" && { sort }),
+                      }).toString()}`}
+                      className={`px-3.5 py-2.5 min-h-[44px] sm:min-h-0 rounded text-sm transition-all flex items-center justify-between ${
+                        isActive
+                          ? "bg-[var(--primary)] text-white font-semibold shadow-xs"
+                          : "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container)] hover:text-[var(--on-surface)]"
+                      }`}
+                      id={`city-filter-${c.toLowerCase()}`}
+                    >
+                      <span>{c}</span>
+                      {isActive && <span className="text-xs">✓</span>}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
 
@@ -154,26 +159,30 @@ export default function CompaniesPage({ searchParams }: PageProps) {
               <h3 className="font-mono text-[10px] font-semibold text-[var(--on-surface-variant)] uppercase tracking-widest mb-3">
                 Sort By
               </h3>
-              <div className="flex flex-col gap-1">
-                {SORT_OPTIONS.map((opt) => (
-                  <Link
-                    key={opt.value}
-                    href={`/companies?${new URLSearchParams({
-                      ...(q && { q }),
-                      ...(city !== "All" && { city }),
-                      ...(stack && { stack }),
-                      sort: opt.value,
-                    }).toString()}`}
-                    className={`px-3 py-2 rounded text-sm transition-colors ${
-                      sort === opt.value
-                        ? "bg-[var(--primary-fixed)] text-[var(--primary)] font-semibold"
-                        : "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container)]"
-                    }`}
-                    id={`sort-filter-${opt.value}`}
-                  >
-                    {opt.label}
-                  </Link>
-                ))}
+              <div className="flex flex-col gap-1.5">
+                {SORT_OPTIONS.map((opt) => {
+                  const isActive = sort === opt.value;
+                  return (
+                    <Link
+                      key={opt.value}
+                      href={`/companies?${new URLSearchParams({
+                        ...(q && { q }),
+                        ...(city !== "All" && { city }),
+                        ...(stack && { stack }),
+                        sort: opt.value,
+                      }).toString()}`}
+                      className={`px-3.5 py-2.5 min-h-[44px] sm:min-h-0 rounded text-sm transition-all flex items-center justify-between ${
+                        isActive
+                          ? "bg-[var(--primary)] text-white font-semibold shadow-xs"
+                          : "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container)] hover:text-[var(--on-surface)]"
+                      }`}
+                      id={`sort-filter-${opt.value}`}
+                    >
+                      <span>{opt.label}</span>
+                      {isActive && <span className="text-xs">✓</span>}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
 
@@ -182,26 +191,29 @@ export default function CompaniesPage({ searchParams }: PageProps) {
               <h3 className="font-mono text-[10px] font-semibold text-[var(--on-surface-variant)] uppercase tracking-widest mb-3">
                 Tech Stack
               </h3>
-              <div className="flex flex-wrap gap-1.5">
-                {STACK_OPTIONS.map((s) => (
-                  <Link
-                    key={s}
-                    href={`/companies?${new URLSearchParams({
-                      ...(q && { q }),
-                      ...(city !== "All" && { city }),
-                      stack: stack === s ? "" : s, // toggle
-                      ...(sort !== "rating" && { sort }),
-                    }).toString()}`}
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
-                      stack === s
-                        ? "bg-[var(--primary)] text-white border-[var(--primary)]"
-                        : "bg-white border-[var(--outline-variant)] text-[var(--on-surface-variant)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
-                    }`}
-                    id={`stack-filter-${s.toLowerCase().replace(".", "-")}`}
-                  >
-                    {s}
-                  </Link>
-                ))}
+              <div className="flex flex-wrap gap-2">
+                {STACK_OPTIONS.map((s) => {
+                  const isActive = stack === s;
+                  return (
+                    <Link
+                      key={s}
+                      href={`/companies?${new URLSearchParams({
+                        ...(q && { q }),
+                        ...(city !== "All" && { city }),
+                        stack: isActive ? "" : s, // toggle
+                        ...(sort !== "rating" && { sort }),
+                      }).toString()}`}
+                      className={`px-3 py-2 min-h-[40px] sm:min-h-0 rounded-full text-xs font-semibold border transition-all inline-flex items-center gap-1 ${
+                        isActive
+                          ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+                          : "bg-white border-[var(--outline-variant)] text-[var(--on-surface-variant)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                      }`}
+                      id={`stack-filter-${s.toLowerCase().replace(".", "-")}`}
+                    >
+                      <span>{s}</span> {isActive && <span>✕</span>}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           </aside>

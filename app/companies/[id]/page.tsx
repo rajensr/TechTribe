@@ -10,13 +10,25 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
+}
+
+// Helper to find company by ID (numeric or string) or slugified name
+function findCompany(paramId: string) {
+  if (!paramId) return undefined;
+  const numericId = parseInt(paramId, 10);
+  return MOCK_COMPANIES.find(
+    (c) =>
+      (!isNaN(numericId) && c.id === numericId) ||
+      c.id.toString() === paramId ||
+      c.companyName.toLowerCase().replace(/[^a-z0-9]/g, "-") === paramId.toLowerCase()
+  );
 }
 
 // Static metadata — SEO er jonno company name use korbo
 export async function generateMetadata({ params }: PageProps) {
-  // Backend wire-up korar somoy ekhane DB query hobe
-  const company = MOCK_COMPANIES.find((c) => c.id === parseInt(params.id));
+  const resolvedParams = await params;
+  const company = findCompany(resolvedParams.id);
   if (!company) return { title: "Company Not Found | TechTribe" };
   return {
     title: `${company.companyName} Reviews & Salaries — TechTribe`,
@@ -24,9 +36,10 @@ export async function generateMetadata({ params }: PageProps) {
   };
 }
 
-export default function CompanyProfilePage({ params }: PageProps) {
-  // Company lookup — Backend e Prisma query hobe
-  const company = MOCK_COMPANIES.find((c) => c.id === parseInt(params.id));
+export default async function CompanyProfilePage({ params }: PageProps) {
+  // Company lookup — robust matching
+  const resolvedParams = await params;
+  const company = findCompany(resolvedParams.id);
   if (!company) notFound();
 
   // Company related reviews
@@ -61,7 +74,7 @@ export default function CompanyProfilePage({ params }: PageProps) {
           {/* Logo */}
           <div className="w-20 h-20 rounded-xl border border-[var(--outline-variant)] bg-[var(--surface-low)] flex items-center justify-center flex-shrink-0">
             {company.logoUrl ? (
-              <img src={company.logoUrl} alt={`${company.companyName} logo`} className="w-full h-full object-contain p-2" />
+              <img src={company.logoUrl} alt={`${company.companyName} logo`} loading="lazy" decoding="async" className="w-full h-full object-contain p-2" />
             ) : (
               <span className="font-mono font-bold text-2xl text-[var(--primary)]">
                 {company.companyName.charAt(0)}

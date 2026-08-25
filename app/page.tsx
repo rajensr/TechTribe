@@ -30,10 +30,10 @@ export const metadata = {
 export default function HomePage() {
   return (
     <>
-      {/* ─── HERO SECTION ─────────────────────────────────────────────────── */}
-      {/* Full-width hero — search bar + popular stacks */}
+      {/* ─── HERO SECTION ─────────────────────────────────────────────── */}
+      {/* Full-width hero — search bar + popular stacks with header clearance */}
       <section
-        className="pt-40 pb-20 bg-[var(--background)] text-center flex flex-col items-center justify-center relative z-10"
+        className="pt-36 sm:pt-40 md:pt-48 pb-20 bg-[var(--background)] text-center flex flex-col items-center justify-center relative z-10"
         aria-label="Search hero"
       >
         <div className="container flex flex-col items-center">
@@ -43,15 +43,15 @@ export default function HomePage() {
             Verified Ecosystem
           </div>
 
-          {/* Main headline — DESIGN.md: display-lg */}
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[var(--on-background)] leading-tight tracking-tight mb-4 max-w-3xl">
+          {/* Main headline — responsive scaling for mobile, tablet, and desktop */}
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-[var(--on-background)] leading-tight tracking-tight mb-4 max-w-3xl px-2">
             Find your next{" "}
             <span className="text-[var(--primary)]">Bangladeshi IT</span>
-            <br />
-            workplace...
+            <br className="hidden sm:inline" />
+            {" "}workplace...
           </h1>
 
-          <p className="text-[var(--on-surface-variant)] text-lg max-w-xl mx-auto mb-10 text-center">
+          <p className="text-[var(--on-surface-variant)] text-base sm:text-lg max-w-xl mx-auto mb-8 sm:mb-10 text-center px-4">
             Access insider company reviews, salary benchmarks, and tech stacks
             from verified professionals across Bangladesh.
           </p>
@@ -61,13 +61,13 @@ export default function HomePage() {
           <form
             action="/companies"
             method="GET"
-            className="flex flex-col sm:flex-row items-center w-full max-w-xl mx-auto gap-2 mb-6"
+            className="flex flex-col sm:flex-row items-center w-full max-w-xl mx-auto gap-3 mb-6 px-4"
             role="search"
           >
             <div className="flex-1 w-full relative">
               {/* Search icon */}
               <span
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--on-surface-variant)]"
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--on-surface-variant)] text-base pointer-events-none"
                 aria-hidden="true"
               >
                 🔍
@@ -76,14 +76,14 @@ export default function HomePage() {
                 type="search"
                 name="q"
                 placeholder="Search by name, stack, or location..."
-                className="input pl-10 h-12 text-sm w-full"
+                className="input pl-11 h-12 text-sm w-full shadow-xs"
                 aria-label="Search companies"
                 id="hero-search-input"
               />
             </div>
             <button
               type="submit"
-              className="btn-primary h-12 px-6 whitespace-nowrap w-full sm:w-auto"
+              className="btn-primary h-12 px-6 whitespace-nowrap w-full sm:w-auto text-sm font-semibold active:scale-95 transition-transform duration-150"
               id="hero-search-btn"
             >
               Search
@@ -91,8 +91,8 @@ export default function HomePage() {
           </form>
 
           {/* ─── POPULAR STACKS ──────────────────────────────────────────── */}
-          {/* Quick filter chips — click hole directory filter kore dekhabe */}
-          <div className="flex flex-wrap items-center justify-center gap-2 max-w-2xl">
+          {/* Quick filter chips — 40px touch targets for mobile accessibility */}
+          <div className="flex flex-wrap items-center justify-center gap-2 max-w-2xl px-2">
             <span className="font-mono text-[10px] text-[var(--on-surface-variant)] uppercase tracking-widest mr-1">
               Popular Stacks:
             </span>
@@ -100,9 +100,9 @@ export default function HomePage() {
               <Link
                 key={stack}
                 href={`/companies?stack=${encodeURIComponent(stack)}`}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 ${
+                className={`px-3.5 py-2 min-h-[40px] sm:min-h-0 inline-flex items-center justify-center rounded-full text-xs font-semibold border transition-all duration-150 ${
                   stack === "Node.js"
-                    ? "bg-[var(--primary-fixed)] border-[var(--primary)] text-[var(--primary)] font-semibold"
+                    ? "bg-[var(--primary-fixed)] border-[var(--primary)] text-[var(--primary)] font-bold shadow-xs"
                     : "bg-white border-[var(--outline-variant)] text-[var(--on-surface-variant)] hover:border-[var(--primary)] hover:text-[var(--primary)] hover:bg-[var(--primary-fixed)]"
                 }`}
                 id={`stack-chip-${stack.toLowerCase().replace(".", "-")}`}
@@ -139,8 +139,8 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* 3-column grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* 3-column responsive grid with mobile horizontal swipe fallback */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:overflow-visible">
             {TOP_WORKLIFE.map((company) => (
               <CompanyCard
                 key={company.id}
@@ -159,7 +159,7 @@ export default function HomePage() {
 
           {/* Mobile — view all link */}
           <div className="text-center mt-6 md:hidden">
-            <Link href="/companies?sort=work_life" className="btn-secondary text-sm">
+            <Link href="/companies?sort=work_life" className="btn-secondary text-sm active:scale-95 transition-transform">
               View All →
             </Link>
           </div>
@@ -212,49 +212,41 @@ export default function HomePage() {
       </section>
 
       {/* ─── CTA BANNER ───────────────────────────────────────────────────── */}
-      {/* "Is your workplace hiring?" — dark blue banner, stitch mockup */}
+      {/* "Is your workplace hiring?" — high contrast card banner */}
       <section
-        className="py-16 bg-[var(--primary)]"
+        className="py-16 md:py-20 bg-[var(--primary)] text-white relative overflow-hidden"
         aria-labelledby="cta-heading"
       >
-        <div className="container">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="text-white max-w-lg">
-              <h2 id="cta-heading" className="text-2xl md:text-3xl font-bold mb-3">
+        <div className="container relative z-10">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8 bg-white/10 backdrop-blur-md p-8 md:p-12 rounded-2xl border border-white/20 shadow-xl">
+            <div className="text-white max-w-xl text-center md:text-left">
+              <h2 id="cta-heading" className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-3 tracking-tight drop-shadow-xs">
                 Is your workplace hiring?
               </h2>
-              <p className="text-[var(--on-primary-container)] text-sm leading-relaxed">
+              <p className="text-blue-100 text-base sm:text-lg leading-relaxed font-normal">
                 Contribute to the ecosystem by sharing your experience and helping
                 peers find great workplaces. All reviews are anonymous and verified
                 by our system.
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
-              {/* Write a review */}
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto flex-shrink-0">
+              {/* Write a review — Solid White button with dark blue bold text (High Contrast) */}
               <Link
                 href="/auth/register"
-                className="btn-secondary bg-transparent border-white text-white hover:bg-white hover:text-[var(--primary)] px-6 py-3"
+                className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl bg-white text-[var(--primary)] font-extrabold text-base shadow-lg hover:bg-slate-100 transition-all duration-200 active:scale-95 cursor-pointer no-underline"
                 id="cta-write-review-btn"
               >
-                Write a Review
+                ✍ Write a Review
               </Link>
-              {/* Claim company profile */}
+              {/* Claim company profile — High contrast dark navy button with white text */}
               <Link
                 href="/employer"
-                className="btn-primary bg-white text-[var(--primary)] hover:bg-[var(--primary-fixed)] px-6 py-3"
+                className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl bg-[#001452] text-white hover:bg-[#001d78] border-2 border-white/40 font-bold text-base shadow-md transition-all duration-200 active:scale-95 cursor-pointer no-underline"
                 id="cta-claim-company-btn"
               >
-                Claim Company Profile
+                🏢 Claim Company Profile
               </Link>
-            </div>
-
-            {/* Decorative icon */}
-            <div
-              className="text-white/20 text-8xl hidden lg:block select-none"
-              aria-hidden="true"
-            >
-              ✍
             </div>
           </div>
         </div>

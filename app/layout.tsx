@@ -63,14 +63,15 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       className={`${geist.variable} ${jetbrainsMono.variable}`}
     >
       <body className="antialiased min-h-screen flex flex-col bg-[var(--background)]">
         {/* Navigation bar — shob page e common */}
         <Navbar />
 
-        {/* Main page content — dynamic */}
-        <main className="flex-1">{children}</main>
+        {/* Main page content — dynamic with fixed header top clearance */}
+        <main className="flex-1 pt-20 sm:pt-24">{children}</main>
 
         {/* Footer — shob page e common */}
         <Footer />

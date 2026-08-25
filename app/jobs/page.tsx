@@ -15,11 +15,12 @@ export const metadata = {
 const STACK_FILTERS = ["All", "React", "Node.js", "Python", "PHP", "Flutter", "Java", "Go", "AWS"];
 
 interface PageProps {
-  searchParams: { stack?: string; city?: string; q?: string };
+  searchParams: Promise<{ stack?: string; city?: string; q?: string }>;
 }
 
-export default function JobsPage({ searchParams }: PageProps) {
-  const { stack = "All", city = "All", q = "" } = searchParams;
+export default async function JobsPage({ searchParams }: PageProps) {
+  const resolvedSearchParams = await searchParams;
+  const { stack = "All", city = "All", q = "" } = resolvedSearchParams || {};
 
   // Jobs + company name merge kora — display er jonno
   // Backend wire-up korar somoy Prisma join query hobe

@@ -7,14 +7,38 @@ export const metadata = {
   description: "Post transparent IT job listings with salary ranges to reach top Bangladeshi tech talent.",
 };
 
+import Link from "next/link";
 import JobPostForm from "@/components/employer/JobPostForm";
 
 export default function PostJobPage() {
   return (
-    <div className="pt-24 pb-16 min-h-screen bg-[var(--background)]">
+    <div className="pb-16 min-h-screen bg-[var(--background)]">
+      {/* ─── MOBILE NAV BAR ──────────────────────────────────────────── */}
+      <div className="lg:hidden bg-white border-b border-[var(--outline-variant)] px-4 py-3 mb-6 overflow-x-auto flex gap-2">
+        {[
+          { label: "Overview", href: "/employer", icon: "⊞" },
+          { label: "Post New Job", href: "/employer/post-job", icon: "⊕", active: true },
+          { label: "Active Listings", href: "/jobs", icon: "⊟" },
+          { label: "Support", href: "/support", icon: "👥" },
+        ].map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 ${
+              item.active
+                ? "bg-[var(--primary)] text-white"
+                : "bg-[var(--surface-container)] text-[var(--on-surface-variant)]"
+            }`}
+          >
+            <span aria-hidden="true">{item.icon}</span>
+            {item.label}
+          </Link>
+        ))}
+      </div>
+
       <div className="flex">
-        {/* ─── SIDEBAR ──────────────────────────────────────────────────── */}
-        <aside className="hidden lg:flex flex-col w-56 fixed left-0 top-16 h-full border-r border-[var(--outline-variant)] bg-white pt-8 px-4">
+        {/* ─── DESKTOP SIDEBAR ────────────────────────────────────────── */}
+        <aside className="hidden lg:flex flex-col w-56 fixed left-0 top-20 sm:top-24 h-[calc(100vh-5rem)] border-r border-[var(--outline-variant)] bg-white pt-6 px-4">
           <h2 className="font-mono text-[10px] font-semibold text-[var(--on-surface-variant)] uppercase tracking-widest mb-4">
             Employer Dashboard
           </h2>
@@ -22,10 +46,10 @@ export default function PostJobPage() {
             {[
               { label: "Overview", href: "/employer", icon: "⊞" },
               { label: "Post New Job", href: "/employer/post-job", icon: "⊕", active: true },
-              { label: "Active Listings", href: "/employer/listings", icon: "⊟" },
-              { label: "Applications", href: "/employer/applications", icon: "👥" },
+              { label: "Active Listings", href: "/jobs", icon: "⊟" },
+              { label: "Support", href: "/support", icon: "👥" },
             ].map((item) => (
-              <a
+              <Link
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-2 px-3 py-2.5 rounded text-sm transition-colors ${
@@ -36,7 +60,7 @@ export default function PostJobPage() {
               >
                 <span aria-hidden="true">{item.icon}</span>
                 {item.label}
-              </a>
+              </Link>
             ))}
           </nav>
 
