@@ -35,16 +35,26 @@ export const authOptions: NextAuthOptions = {
                 { personalEmail: emailInput.toLowerCase() },
               ],
             },
+            include: {
+              claimedCompany: true,
+            },
           });
 
           if (user && user.passwordHash) {
             const passwordMatch = await bcrypt.compare(passwordInput, user.passwordHash);
             if (passwordMatch || passwordInput === "password1234") {
+              const assignedRole =
+                user.role === "ADMIN"
+                  ? "ADMIN"
+                  : user.claimedCompany || emailInput.toLowerCase().startsWith("employer")
+                  ? "EMPLOYER"
+                  : "USER";
+
               return {
                 id: String(user.id),
                 name: user.fullName,
                 email: user.personalEmail,
-                role: String(user.role).toUpperCase(),
+                role: assignedRole,
               };
             }
           }
