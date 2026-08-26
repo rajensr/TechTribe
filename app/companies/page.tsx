@@ -1,5 +1,5 @@
 // app/companies/page.tsx
-// Modern, eye-friendly Company Directory with responsive mobile filters and clean layout
+// IT Company Directory — clean, breathable, modern layout with responsive filters and real MySQL counts
 
 import CompanyCard from "@/components/CompanyCard";
 import { MOCK_COMPANIES } from "@/lib/mock-data";
@@ -8,7 +8,7 @@ import { SearchIcon, CheckIcon } from "@/components/Icons";
 import prisma from "@/lib/prisma";
 
 export const metadata = {
-  title: "Company Directory — TechTribe",
+  title: "IT Company Directory — TechTribe",
   description: "Browse 70+ verified Bangladeshi IT firms. Filter by city, tech stack, and ratings.",
 };
 
@@ -86,28 +86,42 @@ export default async function CompaniesPage({ searchParams }: PageProps) {
 
   // 2. Fallback to mock data if empty
   if (companiesList.length === 0) {
-    companiesList = MOCK_COMPANIES;
+    companiesList = MOCK_COMPANIES.map((c) => ({
+      id: c.id,
+      companyName: c.companyName,
+      location: c.location,
+      city: c.city,
+      techStack: c.techStack,
+      overallRating: c.overallRating,
+      workLifeRating: c.workLifeRating,
+      salaryRating: c.salaryRating,
+      managementRating: c.managementRating,
+      reviewCount: c.reviewCount,
+      isVerified: c.isVerified,
+      isClaimed: c.isClaimed,
+      logoUrl: c.logoUrl,
+      trustBadge: c.trustBadge,
+    }));
   }
 
-  let filtered = [...companiesList];
+  // Filter
+  let filtered = companiesList;
 
-  // Text search
   if (q) {
-    const lower = q.toLowerCase();
+    const query = q.toLowerCase();
     filtered = filtered.filter(
       (c) =>
-        c.companyName.toLowerCase().includes(lower) ||
-        c.location.toLowerCase().includes(lower) ||
-        c.techStack.toLowerCase().includes(lower)
+        c.companyName.toLowerCase().includes(query) ||
+        c.techStack.toLowerCase().includes(query) ||
+        c.location.toLowerCase().includes(query) ||
+        c.city.toLowerCase().includes(query)
     );
   }
 
-  // City filter
   if (city && city !== "All") {
-    filtered = filtered.filter((c) => c.city?.toLowerCase() === city.toLowerCase());
+    filtered = filtered.filter((c) => c.city.toLowerCase() === city.toLowerCase());
   }
 
-  // Stack filter
   if (stack) {
     filtered = filtered.filter((c) =>
       c.techStack.toLowerCase().includes(stack.toLowerCase())
@@ -163,119 +177,165 @@ export default async function CompaniesPage({ searchParams }: PageProps) {
             </button>
           </form>
 
-          {/* Mobile City Pills (Horizontal Scroll) */}
+          {/* City Chips */}
           <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
             {CITIES.map((c) => {
-              const isActive = city === c || (c === "All" && (!city || city === "All"));
+              const active = city === c;
+              const params = new URLSearchParams();
+              if (c !== "All") params.set("city", c);
+              if (q) params.set("q", q);
+              if (stack) params.set("stack", stack);
+              if (sort !== "rating") params.set("sort", sort);
+              const href = `/companies?${params.toString()}`;
+
               return (
                 <Link
                   key={c}
-                  href={`/companies?${new URLSearchParams({
-                    ...(q && { q }),
-                    city: c,
-                    ...(stack && { stack }),
-                    ...(sort !== "rating" && { sort }),
-                  }).toString()}`}
-                  className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                    isActive
+                  href={href}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
+                    active
                       ? "bg-blue-600 text-white shadow-xs"
-                      : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                      : "bg-white text-slate-600 border border-slate-200 hover:border-slate-300"
                   }`}
                 >
-                  <span>{c}</span>
-                  {isActive && <CheckIcon className="w-3 h-3 text-white" />}
+                  {c}
                 </Link>
               );
             })}
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-10">
-          {/* DESKTOP SIDEBAR FILTERS (hidden on small screens, shown >= lg) */}
-          <aside className="hidden lg:block w-72 flex-shrink-0 bg-white border border-slate-200 rounded-2xl p-6 shadow-xs h-fit sticky top-24" aria-label="Filter options">
-            {/* Desktop Search input */}
-            <form method="GET" className="mb-7">
-              <label htmlFor="search-input" className="font-mono text-xs font-semibold text-slate-600 uppercase tracking-wider block mb-2">
+        {/* MAIN LAYOUT */}
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          {/* DESKTOP SIDEBAR FILTERS (>=lg) */}
+          <aside className="hidden lg:block w-72 flex-shrink-0 bg-white border border-slate-200 rounded-3xl p-6 shadow-xs sticky top-28">
+            <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-100">
+              <span className="font-extrabold text-slate-900 text-base">Filters</span>
+              {(q || city !== "All" || stack || sort !== "rating") && (
+                <Link
+                  href="/companies"
+                  className="text-xs text-blue-600 font-bold hover:underline"
+                >
+                  Reset all
+                </Link>
+              )}
+            </div>
+
+            {/* Search Input */}
+            <div className="mb-6">
+              <label htmlFor="company-search" className="block text-xs font-mono font-bold text-slate-500 uppercase tracking-wider mb-2">
                 Search
               </label>
-              <div className="flex items-center bg-white border border-slate-300 rounded-xl px-3.5 h-11 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-500/10 transition-all">
-                <SearchIcon className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
-                <input
-                  type="search"
-                  name="q"
-                  id="search-input"
-                  defaultValue={q}
-                  placeholder="Company, stack, city..."
-                  className="w-full bg-transparent text-sm text-slate-900 font-medium focus:outline-none placeholder:text-slate-400"
-                />
-              </div>
+              <form method="GET">
+                <div className="relative">
+                  <SearchIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="search"
+                    id="company-search"
+                    name="q"
+                    defaultValue={q}
+                    placeholder="Company or stack..."
+                    className="w-full h-10 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+                {city !== "All" && <input type="hidden" name="city" value={city} />}
+                {stack && <input type="hidden" name="stack" value={stack} />}
+                {sort !== "rating" && <input type="hidden" name="sort" value={sort} />}
+              </form>
+            </div>
 
-              {city !== "All" && <input type="hidden" name="city" value={city} />}
-              {stack && <input type="hidden" name="stack" value={stack} />}
-              {sort !== "rating" && <input type="hidden" name="sort" value={sort} />}
-
-              <button type="submit" className="btn-primary w-full mt-2.5 text-xs h-10 font-bold rounded-xl active:scale-95 transition-transform">
-                Apply Search
-              </button>
-            </form>
-
-            {/* City filter */}
-            <div className="mb-7">
-              <h3 className="font-mono text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2.5">
+            {/* City Filter */}
+            <div className="mb-6">
+              <span className="block text-xs font-mono font-bold text-slate-500 uppercase tracking-wider mb-2">
                 City / Region
-              </h3>
-              <div className="flex flex-col gap-1.5">
+              </span>
+              <div className="space-y-1">
                 {CITIES.map((c) => {
-                  const isActive = city === c || (c === "All" && (!city || city === "All"));
+                  const active = city === c;
+                  const params = new URLSearchParams();
+                  if (c !== "All") params.set("city", c);
+                  if (q) params.set("q", q);
+                  if (stack) params.set("stack", stack);
+                  if (sort !== "rating") params.set("sort", sort);
+                  const href = `/companies?${params.toString()}`;
+
                   return (
                     <Link
                       key={c}
-                      href={`/companies?${new URLSearchParams({
-                        ...(q && { q }),
-                        city: c,
-                        ...(stack && { stack }),
-                        ...(sort !== "rating" && { sort }),
-                      }).toString()}`}
-                      className={`px-3.5 py-2 rounded-xl text-xs font-medium transition-all flex items-center justify-between ${
-                        isActive
-                          ? "bg-blue-50 text-blue-700 font-bold border border-blue-200"
-                          : "text-slate-700 hover:bg-slate-50 border border-transparent"
+                      href={href}
+                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                        active
+                          ? "bg-blue-50 text-blue-700 font-bold"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                       }`}
-                      id={`city-filter-${c.toLowerCase()}`}
                     >
                       <span>{c}</span>
-                      {isActive && <CheckIcon className="w-3.5 h-3.5 text-blue-700" />}
+                      {active && <span className="text-blue-600">✓</span>}
                     </Link>
                   );
                 })}
               </div>
             </div>
 
-            {/* Sort filter */}
-            <div>
-              <h3 className="font-mono text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2.5">
-                Sort Companies
-              </h3>
-              <div className="flex flex-col gap-1.5">
-                {SORT_OPTIONS.map((opt) => {
-                  const isActive = sort === opt.value;
+            {/* Tech Stack Pills */}
+            <div className="mb-6">
+              <span className="block text-xs font-mono font-bold text-slate-500 uppercase tracking-wider mb-2">
+                Tech Stack
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {STACK_OPTIONS.map((st) => {
+                  const active = stack.toLowerCase() === st.toLowerCase();
+                  const params = new URLSearchParams();
+                  if (city !== "All") params.set("city", city);
+                  if (q) params.set("q", q);
+                  if (!active) params.set("stack", st);
+                  if (sort !== "rating") params.set("sort", sort);
+                  const href = `/companies?${params.toString()}`;
+
                   return (
                     <Link
-                      key={opt.value}
-                      href={`/companies?${new URLSearchParams({
-                        ...(q && { q }),
-                        ...(city !== "All" && { city }),
-                        ...(stack && { stack }),
-                        sort: opt.value,
-                      }).toString()}`}
-                      className={`px-3.5 py-2 rounded-xl text-xs font-medium transition-all flex items-center justify-between ${
-                        isActive
-                          ? "bg-blue-50 text-blue-700 font-bold border border-blue-200"
-                          : "text-slate-600 hover:bg-slate-50"
+                      key={st}
+                      href={href}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
+                        active
+                          ? "bg-blue-600 text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                       }`}
                     >
-                      <span>{opt.label}</span>
-                      {isActive && <span className="text-blue-600 text-xs">●</span>}
+                      {st}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Sort Options */}
+            <div>
+              <span className="block text-xs font-mono font-bold text-slate-500 uppercase tracking-wider mb-2">
+                Sort By
+              </span>
+              <div className="space-y-1">
+                {SORT_OPTIONS.map((so) => {
+                  const active = sort === so.value;
+                  const params = new URLSearchParams();
+                  if (city !== "All") params.set("city", city);
+                  if (q) params.set("q", q);
+                  if (stack) params.set("stack", stack);
+                  params.set("sort", so.value);
+                  const href = `/companies?${params.toString()}`;
+
+                  return (
+                    <Link
+                      key={so.value}
+                      href={href}
+                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                        active
+                          ? "bg-blue-50 text-blue-700 font-bold"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      }`}
+                    >
+                      <span>{so.label}</span>
+                      {active && <span className="text-blue-600">✓</span>}
                     </Link>
                   );
                 })}
@@ -283,80 +343,37 @@ export default async function CompaniesPage({ searchParams }: PageProps) {
             </div>
           </aside>
 
-          {/* MAIN LISTINGS CONTENT */}
-          <main className="flex-1 min-w-0">
-            {/* Tech Stack Pills (Quick filters) */}
-            <div className="flex flex-wrap gap-1.5 mb-6">
-              {STACK_OPTIONS.map((s) => {
-                const isActive = stack === s;
-                return (
-                  <Link
-                    key={s}
-                    href={`/companies?${new URLSearchParams({
-                      ...(q && { q }),
-                      ...(city !== "All" && { city }),
-                      ...(sort !== "rating" && { sort }),
-                      stack: isActive ? "" : s,
-                    }).toString()}`}
-                    className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
-                      isActive
-                        ? "bg-blue-600 text-white border-blue-600 shadow-2xs"
-                        : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
-                    }`}
-                  >
-                    {s}
-                  </Link>
-                );
-              })}
+          {/* MAIN GRID */}
+          <main className="flex-1 min-w-0 w-full">
+            {/* Header info bar */}
+            <div className="flex items-center justify-between mb-6 pb-3 border-b border-slate-200">
+              <span className="text-xs font-semibold text-slate-500">
+                Showing <strong>{filtered.length}</strong> IT Companies
+              </span>
+              <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Real-time Verified Directory</span>
+              </div>
             </div>
 
-            {/* Active filter notification */}
-            {(q || stack || city !== "All") && (
-              <div className="mb-6 p-3.5 bg-blue-50/80 border border-blue-200 rounded-xl flex items-center justify-between gap-3 text-xs">
-                <span className="text-blue-950 font-medium">
-                  Active filters: {city !== "All" && `City: ${city} `}
-                  {stack && `Stack: ${stack} `}
-                  {q && `Keyword: "${q}" `}
-                </span>
-                <Link
-                  href="/companies"
-                  className="font-bold text-blue-700 hover:underline uppercase tracking-wider flex-shrink-0"
-                >
-                  Clear All
-                </Link>
-              </div>
-            )}
-
-            {/* Grid of Company Cards */}
+            {/* Companies Grid */}
             {filtered.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
                 {filtered.map((company) => (
-                  <CompanyCard
-                    key={company.id}
-                    id={company.id}
-                    companyName={company.companyName}
-                    location={company.location}
-                    techStack={company.techStack}
-                    overallRating={company.overallRating}
-                    reviewCount={company.reviewCount}
-                    isVerified={company.isVerified}
-                    isClaimed={company.isClaimed}
-                    logoUrl={company.logoUrl}
-                    trustBadge={company.trustBadge}
-                  />
+                  <CompanyCard key={company.id} {...company} />
                 ))}
               </div>
             ) : (
-              <div className="bg-white border border-slate-200 rounded-3xl p-12 sm:p-16 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center text-xl mx-auto mb-3">
-                  🔍
-                </div>
-                <h3 className="font-extrabold text-lg text-slate-900 mb-1">No companies found</h3>
-                <p className="text-sm text-slate-500 max-w-sm mx-auto mb-6">
-                  We couldn&apos;t find any companies matching your selected criteria.
+              <div className="bg-white border border-dashed border-slate-300 rounded-3xl p-12 text-center">
+                <h3 className="text-lg font-bold text-slate-900 mb-2">No companies match your filters</h3>
+                <p className="text-sm text-slate-500 mb-6 max-w-sm mx-auto">
+                  Try clearing some filter tags or searching for a different tech stack.
                 </p>
-                <Link href="/companies" className="btn-primary text-xs h-10 px-5 font-bold rounded-xl inline-flex items-center">
-                  Reset All Filters
+                <Link
+                  href="/companies"
+                  className="btn-primary text-xs h-10 px-5 font-bold rounded-xl inline-flex"
+                >
+                  Clear all filters
                 </Link>
               </div>
             )}

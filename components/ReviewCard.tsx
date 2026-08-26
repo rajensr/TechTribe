@@ -1,6 +1,6 @@
 "use client";
 // components/ReviewCard.tsx
-// Verified employee review card with triple-metric ratings, helpful voting, and safe number rendering
+// Verified employee review card with lively triple-metric ratings, helpful voting, and safe number rendering
 
 import { useState } from "react";
 import { StarIcon } from "@/components/Icons";
@@ -19,32 +19,18 @@ export interface ReviewCardProps {
   onVote?: (reviewId: number | string, type: "UPVOTE" | "DOWNVOTE") => void;
 }
 
-function RatingBar({ label, value = 0 }: { label: string; value?: number }) {
+function MetricPill({ label, emoji, value = 0, color }: { label: string; emoji: string; value?: number; color: string }) {
   const safeValue = typeof value === "number" && !isNaN(value) ? Math.min(Math.max(value, 0), 5) : 0;
-  const percentage = (safeValue / 5) * 100;
-
-  const barColor =
-    safeValue >= 4.0 ? "bg-emerald-500" : safeValue >= 3.0 ? "bg-blue-500" : "bg-amber-500";
-
   return (
-    <div className="flex items-center gap-3">
-      <span className="font-mono text-xs text-[var(--on-surface-variant)] w-24 flex-shrink-0">
-        {label}
-      </span>
-      <div className="flex-1 h-2 bg-[var(--surface-container)] rounded-full overflow-hidden">
-        <div
-          className={`h-full ${barColor} rounded-full transition-all duration-500`}
-          style={{ width: `${percentage}%` }}
-          role="progressbar"
-          aria-valuenow={safeValue}
-          aria-valuemin={1}
-          aria-valuemax={5}
-          aria-label={`${label}: ${safeValue} out of 5`}
-        />
+    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3 flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2">
+        <span className="text-sm">{emoji}</span>
+        <span className="text-xs font-semibold text-slate-600">{label}</span>
       </div>
-      <span className="font-mono text-xs font-bold tabular-nums text-[var(--on-surface)] w-6 text-right">
-        {safeValue.toFixed(1)}
-      </span>
+      <div className="flex items-center gap-1.5 font-mono font-extrabold text-xs">
+        <span className={color}>{safeValue.toFixed(1)}</span>
+        <span className="text-slate-300 font-normal">/5</span>
+      </div>
     </div>
   );
 }
@@ -93,7 +79,8 @@ export default function ReviewCard({
     try {
       return new Date(dateStr).toLocaleDateString("en-BD", {
         year: "numeric",
-        month: "long",
+        month: "short",
+        day: "numeric",
       });
     } catch {
       return "Recent";
@@ -101,76 +88,75 @@ export default function ReviewCard({
   };
 
   return (
-    <article className="card animate-fade-in" id={`review-${id}`}>
+    <article className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs hover:border-slate-300 transition-all duration-200" id={`review-${id}`}>
       {/* Top Row: Author + Date + Score */}
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-7 h-7 rounded-full bg-[var(--primary-fixed)] flex items-center justify-center">
-              <span className="font-mono text-xs font-bold text-[var(--primary)]">
-                {isAnonymous ? "A" : (authorName?.charAt(0) ?? "U")}
+      <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-100 mb-5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-600 text-white font-mono font-bold text-sm flex items-center justify-center shadow-xs flex-shrink-0">
+            {isAnonymous ? "🎭" : (authorName?.charAt(0) ?? "U")}
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-extrabold text-slate-900">
+                {isAnonymous ? "Verified Anonymous Engineer" : (authorName ?? "Member")}
+              </span>
+              <span className="text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded-full">
+                OTP Verified
               </span>
             </div>
-            <span className="text-sm font-semibold text-[var(--on-surface)]">
-              {isAnonymous ? "Anonymous TechTribe Member" : (authorName ?? "Member")}
-            </span>
-            {isAnonymous && (
-              <span className="text-xs font-semibold text-[var(--primary)] bg-[var(--primary-fixed)] px-2 py-0.5 rounded-full">
-                Verified Anonymous
-              </span>
-            )}
+            <p className="text-xs text-slate-400 font-medium mt-0.5">{formatDate(createdAt)}</p>
           </div>
-          <p className="text-xs text-[var(--on-surface-variant)]">{formatDate(createdAt)}</p>
         </div>
 
-        <div className="flex items-center gap-1 bg-[var(--primary-fixed)] px-2.5 py-1 rounded-full flex-shrink-0">
-          <StarIcon className="w-3.5 h-3.5 text-[var(--primary)] flex-shrink-0" />
-          <span className="font-mono text-xs font-bold tabular-nums text-[var(--primary)]">{avgRating}</span>
+        <div className="flex items-center gap-1 bg-amber-50 border border-amber-200/80 px-3 py-1 rounded-xl flex-shrink-0">
+          <span className="text-amber-500 text-xs">★</span>
+          <span className="font-mono text-xs font-extrabold tabular-nums text-amber-700">{avgRating}</span>
         </div>
       </div>
 
-      {/* Triple Metric Rating Bars */}
-      <div className="flex flex-col gap-2.5 mb-4 p-4 bg-[var(--surface-low)] rounded-xl border border-[var(--outline-variant)]">
-        <RatingBar label="Work-Life" value={safeWorkLife} />
-        <RatingBar label="Salary" value={safeSalary} />
-        <RatingBar label="Management" value={safeManagement} />
+      {/* 3 Metric Mini Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-5">
+        <MetricPill label="Work-Life" emoji="🌿" value={safeWorkLife} color="text-emerald-600" />
+        <MetricPill label="Salary" emoji="💳" value={safeSalary} color="text-blue-600" />
+        <MetricPill label="Management" emoji="🎯" value={safeManagement} color="text-purple-600" />
       </div>
 
       {/* Review Text */}
-      <p className="text-sm text-[var(--on-surface-variant)] leading-relaxed max-w-[75ch] mb-4 whitespace-pre-line">
+      <p className="text-sm text-slate-700 leading-relaxed mb-6 whitespace-pre-line font-normal">
         {reviewText}
       </p>
 
-      {/* Community Helpful Votes */}
-      <div className="flex items-center gap-3 pt-3 border-t border-[var(--outline-variant)]">
-        <span className="text-xs text-[var(--on-surface-variant)]">Helpful?</span>
-        <button
-          onClick={() => handleVote("UPVOTE")}
-          className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
-            userVote === "UPVOTE"
-              ? "bg-[var(--primary)] text-white"
-              : "bg-[var(--surface-container)] text-[var(--on-surface-variant)] hover:bg-[var(--primary-fixed)] hover:text-[var(--primary)]"
-          }`}
-          aria-label="Upvote this review"
-          aria-pressed={userVote === "UPVOTE"}
-          id={`upvote-review-${id}`}
-        >
-          ▲ Helpful ({voteScore})
-        </button>
+      {/* Helpful Votes Bar */}
+      <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs">
+        <span className="text-slate-400 font-medium">Was this review helpful?</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleVote("UPVOTE")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all ${
+              userVote === "UPVOTE"
+                ? "bg-blue-600 text-white shadow-xs"
+                : "bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-700"
+            }`}
+            aria-label="Upvote this review"
+            id={`upvote-review-${id}`}
+          >
+            <span>▲</span>
+            <span>Helpful ({voteScore})</span>
+          </button>
 
-        <button
-          onClick={() => handleVote("DOWNVOTE")}
-          className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
-            userVote === "DOWNVOTE"
-              ? "bg-[var(--primary)] text-white"
-              : "bg-[var(--surface-container)] text-[var(--on-surface-variant)] hover:bg-[var(--surface-high)]"
-          }`}
-          aria-label="Downvote this review"
-          aria-pressed={userVote === "DOWNVOTE"}
-          id={`downvote-review-${id}`}
-        >
-          ▼
-        </button>
+          <button
+            onClick={() => handleVote("DOWNVOTE")}
+            className={`flex items-center justify-center w-8 h-8 rounded-xl font-bold transition-all ${
+              userVote === "DOWNVOTE"
+                ? "bg-slate-700 text-white"
+                : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+            }`}
+            aria-label="Downvote this review"
+            id={`downvote-review-${id}`}
+          >
+            <span>▼</span>
+          </button>
+        </div>
       </div>
     </article>
   );
