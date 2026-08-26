@@ -48,7 +48,7 @@ export default function PostJobPage() {
               {[
                 { label: "Overview", href: "/employer", icon: BuildingIcon },
                 { label: "Post New Job", href: "/employer/post-job", icon: BriefcaseIcon, active: true },
-                { label: "Active Listings", href: "/jobs", icon: CheckIcon },
+                { label: "Active Listings", href: "/employer/listings", icon: CheckIcon },
                 { label: "Support", href: "/support", icon: ShieldIcon },
               ].map((item) => {
                 const IconComp = item.icon;

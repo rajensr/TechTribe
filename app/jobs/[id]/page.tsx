@@ -1,5 +1,5 @@
 // app/jobs/[id]/page.tsx
-// Job details page — displays complete job posting, requirements, and salary details
+// Job details page — displays complete job posting, contact info, apply link, requirements, and salary
 
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -19,13 +19,14 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
   const resolvedParams = await params;
   const numericId = parseInt(resolvedParams.id, 10);
 
-  // 1. Try DB fetch first
   let jobData: {
     id: number | string;
     jobTitle: string;
     jobDescription: string;
     salaryRangeMin: number;
     salaryRangeMax: number;
+    applicationUrl?: string | null;
+    contactEmail?: string | null;
     status: string;
     createdAt: Date | string;
     company: {
@@ -35,6 +36,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
       city: string;
       techStack: string;
       websiteDomain: string;
+      logoUrl?: string | null;
     };
   } | null = null;
 
@@ -54,6 +56,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
             city: dbJob.company.city,
             techStack: dbJob.company.techStack,
             websiteDomain: dbJob.company.websiteDomain,
+            logoUrl: dbJob.company.logoUrl,
           },
         };
       }
@@ -62,17 +65,17 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
     console.warn("DB job lookup failed, checking fallback:", err);
   }
 
-  // 2. Fallback to mock data if not found in DB
+  // Fallback to mock data if not found in DB
   if (!jobData) {
     const mockJob = MOCK_JOBS.find((j) => j.id.toString() === resolvedParams.id);
     if (mockJob) {
       const mockCompany = MOCK_COMPANIES.find((c) => c.id === mockJob.companyId) || {
         id: mockJob.companyId,
         companyName: mockJob.companyName,
-        location: "Chattogram, Bangladesh",
-        city: "Chattogram",
+        location: "Mohakhali, Dhaka",
+        city: "Dhaka",
         techStack: mockJob.techStack,
-        websiteDomain: "techtribe.xyz",
+        websiteDomain: "brainstation-23.com",
       };
 
       jobData = {
@@ -81,6 +84,8 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
         jobDescription: mockJob.jobDescription,
         salaryRangeMin: mockJob.salaryRangeMin,
         salaryRangeMax: mockJob.salaryRangeMax,
+        applicationUrl: "https://careers.brainstation-23.com",
+        contactEmail: "hr@brainstation-23.com",
         status: mockJob.status,
         createdAt: mockJob.createdAt,
         company: mockCompany,
@@ -97,10 +102,10 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
     : [];
 
   return (
-    <div className="py-12 md:py-20 flex-1 bg-[var(--background)]">
+    <div className="page-wrapper bg-[var(--background)]">
       <div className="container max-w-4xl">
         {/* Breadcrumb navigation */}
-        <nav className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-8" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-6" aria-label="Breadcrumb">
           <Link href="/jobs" className="hover:text-blue-600">
             Jobs
           </Link>
@@ -113,8 +118,8 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
         </nav>
 
         {/* Job Header Card */}
-        <div className="bg-white border-2 border-slate-300 rounded-3xl p-8 sm:p-10 shadow-xs mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 border-b border-slate-200">
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-xs mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 border-b border-slate-100">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs font-bold text-blue-700 mb-3">
                 <CheckIcon className="w-3.5 h-3.5 text-blue-600" />
@@ -123,7 +128,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">
                 {jobData.jobTitle}
               </h1>
-              <p className="text-slate-600 font-semibold text-base">
+              <p className="text-slate-600 font-semibold text-sm sm:text-base">
                 <Link href={`/companies/${jobData.company.id}`} className="hover:text-blue-600 transition-colors">
                   {jobData.company.companyName}
                 </Link>
@@ -142,60 +147,115 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
             </div>
           </div>
 
-          <div className="pt-6 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap gap-2">
+          <div className="pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex flex-wrap gap-1.5">
               {stackTags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-3 py-1 bg-slate-100 border border-slate-200 text-slate-800 rounded-lg text-xs font-semibold"
+                  className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-semibold"
                 >
                   {tag}
                 </span>
               ))}
             </div>
 
-            <Link
-              href={`/companies/${jobData.company.id}`}
-              className="btn-primary text-sm h-11 px-6 font-bold rounded-xl active:scale-95 transition-all inline-flex items-center gap-2"
-            >
-              <span>View Company & Reviews</span>
-              <ArrowRightIcon className="w-4 h-4" />
-            </Link>
+            {/* Direct Apply / Contact Button */}
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              {jobData.applicationUrl ? (
+                <a
+                  href={jobData.applicationUrl.startsWith("http") ? jobData.applicationUrl : `https://${jobData.applicationUrl}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-primary text-xs h-11 px-6 font-bold rounded-xl active:scale-95 transition-all w-full sm:w-auto inline-flex items-center justify-center gap-2"
+                >
+                  <span>Apply on Company Portal</span>
+                  <ArrowRightIcon className="w-3.5 h-3.5" />
+                </a>
+              ) : jobData.contactEmail ? (
+                <a
+                  href={`mailto:${jobData.contactEmail}?subject=Application for ${encodeURIComponent(jobData.jobTitle)}`}
+                  className="btn-primary text-xs h-11 px-6 font-bold rounded-xl active:scale-95 transition-all w-full sm:w-auto inline-flex items-center justify-center gap-2"
+                >
+                  <span>Email Resume to HR</span>
+                  <ArrowRightIcon className="w-3.5 h-3.5" />
+                </a>
+              ) : (
+                <Link
+                  href={`/companies/${jobData.company.id}`}
+                  className="btn-primary text-xs h-11 px-6 font-bold rounded-xl active:scale-95 transition-all w-full sm:w-auto inline-flex items-center justify-center gap-2"
+                >
+                  <span>Explore Workplace</span>
+                  <ArrowRightIcon className="w-4 h-4" />
+                </Link>
+              )}
+            </div>
           </div>
         </div>
 
+        {/* Contact / How to Apply Card */}
+        {(jobData.applicationUrl || jobData.contactEmail) && (
+          <div className="bg-blue-50/80 border border-blue-200 rounded-3xl p-6 sm:p-8 shadow-xs mb-8">
+            <h2 className="text-base font-extrabold text-blue-950 mb-3 flex items-center gap-2">
+              <span>📬</span> How to Apply &amp; Contact HR
+            </h2>
+            <div className="space-y-2 text-sm text-slate-700">
+              {jobData.contactEmail && (
+                <p>
+                  <strong>HR Email:</strong>{" "}
+                  <a href={`mailto:${jobData.contactEmail}`} className="text-blue-600 hover:underline font-mono">
+                    {jobData.contactEmail}
+                  </a>
+                </p>
+              )}
+              {jobData.applicationUrl && (
+                <p className="truncate">
+                  <strong>Application Link:</strong>{" "}
+                  <a
+                    href={jobData.applicationUrl.startsWith("http") ? jobData.applicationUrl : `https://${jobData.applicationUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline break-all"
+                  >
+                    {jobData.applicationUrl}
+                  </a>
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Job Description Card */}
-        <div className="bg-white border-2 border-slate-300 rounded-3xl p-8 sm:p-10 shadow-xs mb-8">
-          <h2 className="text-xl font-bold text-slate-900 mb-4">Job Description & Role Details</h2>
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-xs mb-8">
+          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-4">Job Description &amp; Role Details</h2>
           <div className="prose text-slate-700 text-sm leading-relaxed whitespace-pre-line">
             {jobData.jobDescription}
           </div>
         </div>
 
-        {/* Company Quick Card */}
-        <div className="bg-slate-50 border-2 border-slate-200 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+        {/* Company Overview Card */}
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xs">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white font-mono font-bold text-xl flex items-center justify-center shadow-md flex-shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-indigo-600 text-white font-mono font-bold text-xl flex items-center justify-center shadow-xs flex-shrink-0">
               {jobData.company.companyName.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-base">{jobData.company.companyName}</h3>
-              <p className="text-xs text-slate-600">{jobData.company.location}</p>
+              <h3 className="font-extrabold text-slate-900 text-base">{jobData.company.companyName}</h3>
+              <p className="text-xs text-slate-500 font-medium">{jobData.company.location}</p>
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 w-full sm:w-auto">
             <Link
               href={`/companies/${jobData.company.id}`}
-              className="px-5 py-2.5 bg-white border border-slate-300 text-slate-800 font-bold rounded-xl text-xs hover:bg-slate-100 transition-colors"
+              className="btn-secondary text-xs h-10 px-5 font-bold rounded-xl w-full sm:w-auto justify-center"
             >
               Company Profile
             </Link>
             <Link
               href={`/companies/${jobData.company.id}?write-review=true`}
-              className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl text-xs hover:bg-blue-700 transition-colors"
+              className="btn-primary text-xs h-10 px-5 font-bold rounded-xl w-full sm:w-auto justify-center"
             >
-              Write a Review
+              Write Review
             </Link>
           </div>
         </div>

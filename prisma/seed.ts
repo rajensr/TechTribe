@@ -70,6 +70,23 @@ async function main() {
   });
   console.log(`🛡️ Short Admin created/verified: ${adminShort.personalEmail} (Role: ${adminShort.role})`);
 
+  // 4. Default Employer: employer@gmail.com (Linked to Brain Station 23)
+  const defaultEmployer = await prisma.user.upsert({
+    where: { personalEmail: "employer@gmail.com" },
+    update: {
+      fullName: "Brain Station HR",
+      passwordHash,
+      role: UserRole.USER,
+    },
+    create: {
+      fullName: "Brain Station HR",
+      personalEmail: "employer@gmail.com",
+      passwordHash,
+      role: UserRole.USER,
+    },
+  });
+  console.log(`💼 Employer created/verified: ${defaultEmployer.personalEmail}`);
+
   // Reviewer user for upvoting
   const reviewerUser = await prisma.user.upsert({
     where: { personalEmail: "reviewer@gmail.com" },
@@ -86,10 +103,11 @@ async function main() {
     },
   });
 
-  // 4. Seed Companies
+  // 5. Seed Companies
   console.log("🏢 Seeding companies...");
   let seededCompaniesCount = 0;
   for (const company of companies) {
+    const isBrainStation = company.companyName.toLowerCase().includes("brain station");
     await prisma.company.upsert({
       where: { websiteDomain: company.websiteDomain },
       update: {
@@ -102,6 +120,8 @@ async function main() {
         facebookUrl: company.facebookUrl || null,
         linkedinUrl: company.linkedinUrl || null,
         isVerified: true,
+        isClaimed: isBrainStation ? true : false,
+        claimedByUserId: isBrainStation ? defaultEmployer.id : null,
       },
       create: {
         companyName: company.companyName,
@@ -114,6 +134,8 @@ async function main() {
         facebookUrl: company.facebookUrl || null,
         linkedinUrl: company.linkedinUrl || null,
         isVerified: true,
+        isClaimed: isBrainStation ? true : false,
+        claimedByUserId: isBrainStation ? defaultEmployer.id : null,
       },
     });
     seededCompaniesCount++;
@@ -258,6 +280,33 @@ async function main() {
   console.log("💼 Seeding jobs...");
   const jobsToSeed = [];
 
+  const brainStation = await prisma.company.findFirst({
+    where: { companyName: { contains: "Brain Station" } },
+  });
+
+  if (brainStation) {
+    jobsToSeed.push({
+      companyId: brainStation.id,
+      jobTitle: "Senior Lead React Native & Node.js Architect",
+      jobDescription: "Lead our enterprise mobile and backend initiatives. Direct involvement in scalable fintech infrastructure.",
+      salaryRangeMin: 120000,
+      salaryRangeMax: 220000,
+      applicationUrl: "https://careers.brainstation-23.com/lead-architect",
+      contactEmail: "careers@brainstation-23.com",
+      status: JobStatus.PUBLISHED,
+    });
+    jobsToSeed.push({
+      companyId: brainStation.id,
+      jobTitle: "AI / Python Cloud ML Engineer",
+      jobDescription: "Develop machine learning microservices, fine-tune LLM models, and build cloud-native AI pipelines on AWS/GCP.",
+      salaryRangeMin: 95000,
+      salaryRangeMax: 170000,
+      applicationUrl: "https://careers.brainstation-23.com/ai-engineer",
+      contactEmail: "careers@brainstation-23.com",
+      status: JobStatus.PUBLISHED,
+    });
+  }
+
   if (echoLogyx) {
     jobsToSeed.push({
       companyId: echoLogyx.id,
@@ -265,6 +314,8 @@ async function main() {
       jobDescription: "We are seeking an experienced Full Stack Engineer to build scalable microservices and rich frontend dashboards.",
       salaryRangeMin: 90000,
       salaryRangeMax: 160000,
+      applicationUrl: "https://echologyx.com/careers",
+      contactEmail: "hr@echologyx.com",
       status: JobStatus.PUBLISHED,
     });
     jobsToSeed.push({

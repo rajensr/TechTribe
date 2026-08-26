@@ -104,6 +104,8 @@ model Job {
   jobDescription String    @db.Text @map("job_description")
   salaryRangeMin Int       @map("salary_range_min")   // BDT — mandatory field
   salaryRangeMax Int       @map("salary_range_max")   // BDT — mandatory field
+  applicationUrl String?   @db.Text @map("application_url") // link to apply / form / career portal
+  contactEmail   String?   @map("contact_email")    // HR contact email
   status         JobStatus @default(DRAFT)             // DRAFT theke PUBLISHED e jaay
   createdAt      DateTime  @default(now()) @map("created_at")
 

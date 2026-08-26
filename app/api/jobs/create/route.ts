@@ -8,6 +8,7 @@ import prisma from "@/lib/prisma";
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
     const body = await request.json();
     const {
       jobTitle,
@@ -15,6 +16,8 @@ export async function POST(request: Request) {
       salaryRangeMin,
       salaryRangeMax,
       techStack,
+      applicationUrl,
+      contactEmail,
       status = "PUBLISHED",
       companyId,
     } = body;
@@ -37,11 +40,25 @@ export async function POST(request: Request) {
       );
     }
 
-    // Resolve company ID
+    // Resolve company ID from logged-in user or requested ID
     let numericCompanyId = companyId ? parseInt(String(companyId), 10) : NaN;
+
+    if (isNaN(numericCompanyId) && session?.user?.email) {
+      const user = await prisma.user.findFirst({
+        where: { personalEmail: session.user.email },
+        include: { claimedCompany: true },
+      });
+      if (user?.claimedCompany) {
+        numericCompanyId = user.claimedCompany.id;
+      }
+    }
+
+    // If still not resolved, fallback to Brain Station 23 or first company
     if (isNaN(numericCompanyId)) {
-      const firstCompany = await prisma.company.findFirst();
-      numericCompanyId = firstCompany ? firstCompany.id : 1;
+      const brainStation = await prisma.company.findFirst({
+        where: { companyName: { contains: "Brain Station" } },
+      });
+      numericCompanyId = brainStation ? brainStation.id : 1;
     }
 
     const newJob = await prisma.job.create({
@@ -51,11 +68,13 @@ export async function POST(request: Request) {
         jobDescription: String(jobDescription).trim(),
         salaryRangeMin: min,
         salaryRangeMax: max,
+        applicationUrl: applicationUrl ? String(applicationUrl).trim() : null,
+        contactEmail: contactEmail ? String(contactEmail).trim() : null,
         status: status === "DRAFT" ? "DRAFT" : "PUBLISHED",
       },
     });
 
-    console.log(`[JOB CREATED] ID: ${newJob.id}, Title: ${jobTitle}, Range: ${min}-${max}`);
+    console.log(`[JOB CREATED] ID: ${newJob.id}, Company: ${numericCompanyId}, Title: ${jobTitle}`);
 
     return NextResponse.json(
       { success: true, message: "Job listing created successfully!", jobId: newJob.id },

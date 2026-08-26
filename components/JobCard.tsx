@@ -121,14 +121,21 @@ export default function JobCard({
           </div>
         </div>
 
-        {/* Right — posted time (desktop view) */}
-        {postedAt && (
-          <div className="hidden sm:block flex-shrink-0 text-right">
-            <span className="text-xs text-[var(--on-surface-variant)] font-medium">
+        {/* Right — posted time and action (desktop view) */}
+        <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 flex-shrink-0 text-right mt-2 sm:mt-0">
+          {postedAt && (
+            <span className="hidden sm:block text-xs text-slate-400 font-medium">
               {getTimeAgo(postedAt)}
             </span>
-          </div>
-        )}
+          )}
+          <Link
+            href={`/jobs/${id}`}
+            className="btn-primary text-xs h-9 px-4 font-bold rounded-lg active:scale-95 transition-all inline-flex items-center gap-1"
+          >
+            <span>View &amp; Apply</span>
+            <span>→</span>
+          </Link>
+        </div>
       </div>
     </article>
   );
