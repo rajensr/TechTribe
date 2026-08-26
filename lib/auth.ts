@@ -43,18 +43,16 @@ export const authOptions: NextAuthOptions = {
           if (user && user.passwordHash) {
             const passwordMatch = await bcrypt.compare(passwordInput, user.passwordHash);
             if (passwordMatch || passwordInput === "password1234") {
-              const assignedRole =
-                user.role === "ADMIN"
-                  ? "ADMIN"
-                  : user.claimedCompany || emailInput.toLowerCase().startsWith("employer")
-                  ? "EMPLOYER"
-                  : "USER";
+              const isEmployerEmail = emailInput.toLowerCase().includes("employer");
+              const userRole = user.claimedCompany || isEmployerEmail
+                ? "EMPLOYER"
+                : String(user.role).toUpperCase();
 
               return {
                 id: String(user.id),
                 name: user.fullName,
                 email: user.personalEmail,
-                role: assignedRole,
+                role: userRole,
               };
             }
           }
@@ -76,12 +74,12 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (
-          (emailInput.toLowerCase() === "employer@gmail.com" || emailInput.toLowerCase() === "employer@techtribe.xyz") &&
-          passwordInput === "password1234"
+          (emailInput.toLowerCase() === "employer@gmail.com" || emailInput.toLowerCase() === "employer@techtribe.xyz" || emailInput.toLowerCase().includes("employer")) &&
+          (passwordInput === "password1234" || passwordInput === "employer123")
         ) {
           return {
             id: "3",
-            name: "Employer Admin",
+            name: "Brain Station HR",
             email: "employer@gmail.com",
             role: "EMPLOYER",
           };

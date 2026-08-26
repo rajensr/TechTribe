@@ -126,21 +126,12 @@ export default function Navbar() {
                     Admin Portal
                   </Link>
                 ) : isEmployer ? (
-                  <div className="flex items-center gap-2">
-                    <Link
-                      href="/employer"
-                      className="h-10 px-4 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl active:scale-95 transition-all inline-flex items-center justify-center"
-                    >
-                      Portal
-                    </Link>
-                    <Link
-                      href="/employer/post-job"
-                      className="h-10 px-4 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl active:scale-95 transition-all inline-flex items-center justify-center shadow-xs"
-                      id="nav-post-job-btn"
-                    >
-                      + Post a Job
-                    </Link>
-                  </div>
+                  <Link
+                    href="/employer"
+                    className="h-10 px-4 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-xl active:scale-95 transition-all inline-flex items-center justify-center shadow-xs"
+                  >
+                    Manage Company
+                  </Link>
                 ) : (
                   <Link
                     href="/companies"
@@ -241,14 +232,9 @@ export default function Navbar() {
                       Open Admin Panel
                     </Link>
                   ) : isEmployer ? (
-                    <div className="flex flex-col gap-2 w-full">
-                      <Link href="/employer/post-job" className="btn-primary text-xs w-full text-center py-2.5">
-                        + Post a Job
-                      </Link>
-                      <Link href="/employer" className="btn-ghost text-xs w-full text-center py-2.5 bg-slate-100 font-bold">
-                        Employer Portal
-                      </Link>
-                    </div>
+                    <Link href="/employer" className="bg-purple-600 text-white font-bold text-xs w-full text-center py-2.5 rounded-xl">
+                      Company Solutions
+                    </Link>
                   ) : (
                     <Link href="/companies" className="btn-primary text-xs w-full text-center py-2.5">
                       Explore &amp; Post Review
