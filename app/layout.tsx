@@ -8,20 +8,20 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 // ─── FONT LOADING ─────────────────────────────────────────────────────────────
-// Geist — primary font (headlines + body) — DESIGN.md er recommendation
 const geist = Geist({
-  variable: "--font-geist",        // CSS variable e store hobe, globals.css e use
+  variable: "--font-geist",
   subsets: ["latin"],
   display: "swap",
   weight: ["400", "500", "600", "700"],
+  preload: true,
 });
 
-// JetBrains Mono — labels, tags, metadata er jonno sparingly use
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
   display: "swap",
   weight: ["400", "500", "600"],
+  preload: false, // Prevents unused font preload browser warnings
 });
 
 // ─── SEO METADATA ─────────────────────────────────────────────────────────────
@@ -53,6 +53,8 @@ export const metadata: Metadata = {
   },
 };
 
+import Providers from "@/components/auth/Providers";
+
 // ─── ROOT LAYOUT COMPONENT ────────────────────────────────────────────────────
 // Shob page er common wrapper — Navbar, main content, Footer
 export default function RootLayout({
@@ -67,14 +69,16 @@ export default function RootLayout({
       className={`${geist.variable} ${jetbrainsMono.variable}`}
     >
       <body className="antialiased min-h-screen flex flex-col bg-[var(--background)]">
-        {/* Navigation bar — shob page e common */}
-        <Navbar />
+        <Providers>
+          {/* Navigation bar — shob page e common */}
+          <Navbar />
 
-        {/* Main page content — dynamic with fixed header top clearance */}
-        <main className="flex-1 pt-20 sm:pt-24">{children}</main>
+          {/* Main page content — dynamic */}
+          <main className="flex-1 flex flex-col w-full">{children}</main>
 
-        {/* Footer — shob page e common */}
-        <Footer />
+          {/* Footer — shob page e common */}
+          <Footer />
+        </Providers>
       </body>
     </html>
   );

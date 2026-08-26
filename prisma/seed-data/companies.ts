@@ -798,3 +798,7 @@ export const companies = [
 ];
 
 export type CompanySeed = typeof companies[0];
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { companies };
+}

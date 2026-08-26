@@ -110,27 +110,22 @@ const config: Config = {
       },
 
       // ─── BORDER RADIUS (DESIGN.md shape language) ──────────────────────────
+      // NOTE: Only extend, don't override — Tailwind defaults (2xl, 3xl, full) still needed
       borderRadius: {
-        sm: "0.125rem",   // 2px
-        DEFAULT: "0.25rem", // 4px — buttons, inputs
-        md: "0.375rem",   // 6px
-        lg: "0.5rem",     // 8px — cards
-        xl: "0.75rem",    // 12px
-        full: "9999px",   // pill — badges, tags
+        // Tailwind defaults preserved; custom values added here if needed
       },
 
       // ─── SPACING ───────────────────────────────────────────────────────────
+      // Custom named tokens — prefixed with "space-" to avoid shadowing Tailwind defaults
       spacing: {
-        "4px": "4px",
-        xs: "0.5rem",   // 8px
-        sm: "1rem",     // 16px
-        md: "1.5rem",   // 24px — component internal padding
-        lg: "2.5rem",   // 40px
-        xl: "4rem",     // 64px — section gaps
-        gutter: "24px",
+        "space-xs": "0.5rem",   // 8px
+        "space-sm": "1rem",     // 16px
+        "space-md": "1.5rem",   // 24px — component internal padding
+        "space-lg": "2.5rem",   // 40px
+        "space-xl": "4rem",     // 64px — section gaps
+        "gutter": "24px",
         "margin-mobile": "16px",
         "margin-desktop": "48px",
-        "max-w": "1280px",
       },
 
       // ─── MAX WIDTH ─────────────────────────────────────────────────────────

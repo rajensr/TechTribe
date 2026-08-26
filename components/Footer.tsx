@@ -16,7 +16,7 @@ const FOOTER_SECTIONS = [
   {
     title: "Resources",
     links: [
-      { label: "Tech Stacks", href: "/companies?filter=stacks" },
+      { label: "Companies", href: "/companies" },
       { label: "Job Board", href: "/jobs" },
       { label: "Reviews", href: "/companies" },
       { label: "Salaries", href: "/salaries" },
@@ -38,7 +38,7 @@ export default function Footer() {
 
   return (
     <footer
-      className="bg-white border-t border-[var(--outline-variant)] mt-auto"
+      className="bg-white border-t border-slate-300 mt-16 sm:mt-24"
       role="contentinfo"
     >
       <div className="container">
@@ -69,7 +69,7 @@ export default function Footer() {
               </h3>
               <ul className="flex flex-col gap-3.5" role="list">
                 {section.links.map((link) => (
-                  <li key={link.href}>
+                  <li key={`${section.title}-${link.label}`}>
                     <Link
                       href={link.href}
                       className="text-sm text-[var(--on-surface-variant)] hover:text-[var(--primary)] transition-colors duration-150"
@@ -85,15 +85,15 @@ export default function Footer() {
 
         {/* ─── BOTTOM BAR ────────────────────────────────────────────────── */}
         {/* Copyright + system status — stitch mockup match */}
-        <div className="border-t border-[var(--outline-variant)] py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="font-mono text-[11px] text-[var(--on-surface-variant)] uppercase tracking-widest">
+        <div className="border-t border-[var(--outline-variant)] mt-12 pt-8 pb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="font-mono text-xs text-[var(--on-surface-variant)]">
             © {year} TechTribe Bangladesh. All rights reserved.
           </p>
 
           {/* System status indicator */}
-          <div className="flex items-center gap-2 font-mono text-[11px] text-[var(--on-surface-variant)] uppercase tracking-widest">
+          <div className="flex items-center gap-2 font-mono text-xs text-[var(--on-surface-variant)]">
             {/* Green dot — system online indicator */}
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+            <span className="w-2 h-2 rounded-full bg-emerald-500" aria-hidden="true" />
             System Status: Optimal
           </div>
         </div>

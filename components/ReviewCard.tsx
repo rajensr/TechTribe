@@ -1,58 +1,49 @@
-// components/ReviewCard.tsx
-// Employee review card — triple metric rating bars + vote buttons + anonymous badge
-// Privacy: isAnonymous = true hole author name hide hobe
-
 "use client";
+// components/ReviewCard.tsx
+// Verified employee review card with triple-metric ratings, helpful voting, and safe number rendering
 
 import { useState } from "react";
+import { StarIcon } from "@/components/Icons";
 
 export interface ReviewCardProps {
   id: number | string;
-  authorName?: string;          // isAnonymous = true hole undefined
-  isAnonymous: boolean;
-  workLifeRating: number;       // 1-5
-  salaryRating: number;         // 1-5
-  managementRating: number;     // 1-5
+  authorName?: string;
+  isAnonymous?: boolean;
+  workLifeRating?: number;
+  salaryRating?: number;
+  managementRating?: number;
   reviewText: string;
-  voteScore: number;            // upvote - downvote
-  createdAt: string;            // ISO date string
-  userVote?: "UPVOTE" | "DOWNVOTE" | null; // logged in user er current vote
-  onVote?: (reviewId: number | string, voteType: "UPVOTE" | "DOWNVOTE") => void;
+  voteScore: number;
+  createdAt: string;
+  userVote?: "UPVOTE" | "DOWNVOTE" | null;
+  onVote?: (reviewId: number | string, type: "UPVOTE" | "DOWNVOTE") => void;
 }
 
-// Rating bar — 1-5 scale, colored fill
-function RatingBar({ label, value }: { label: string; value: number }) {
-  // 1-5 scale ke percentage convert
-  const percentage = ((value - 1) / 4) * 100;
+function RatingBar({ label, value = 0 }: { label: string; value?: number }) {
+  const safeValue = typeof value === "number" && !isNaN(value) ? Math.min(Math.max(value, 0), 5) : 0;
+  const percentage = (safeValue / 5) * 100;
 
-  // Color — score anuzaayi
   const barColor =
-    value >= 4.5 ? "bg-emerald-500" :
-    value >= 3.5 ? "bg-blue-500" :
-    value >= 2.5 ? "bg-amber-500" :
-    "bg-red-400";
+    safeValue >= 4.0 ? "bg-emerald-500" : safeValue >= 3.0 ? "bg-blue-500" : "bg-amber-500";
 
   return (
     <div className="flex items-center gap-3">
-      {/* Label — JetBrains Mono */}
-      <span className="font-mono text-[10px] font-medium text-[var(--on-surface-variant)] uppercase tracking-wider w-24 flex-shrink-0">
+      <span className="font-mono text-xs text-[var(--on-surface-variant)] w-24 flex-shrink-0">
         {label}
       </span>
-      {/* Bar container */}
-      <div className="flex-1 h-1.5 bg-[var(--surface-container)] rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-[var(--surface-container)] rounded-full overflow-hidden">
         <div
           className={`h-full ${barColor} rounded-full transition-all duration-500`}
           style={{ width: `${percentage}%` }}
           role="progressbar"
-          aria-valuenow={value}
+          aria-valuenow={safeValue}
           aria-valuemin={1}
           aria-valuemax={5}
-          aria-label={`${label}: ${value} out of 5`}
+          aria-label={`${label}: ${safeValue} out of 5`}
         />
       </div>
-      {/* Score */}
-      <span className="font-mono text-xs font-semibold text-[var(--on-surface)] w-6 text-right">
-        {value.toFixed(1)}
+      <span className="font-mono text-xs font-bold tabular-nums text-[var(--on-surface)] w-6 text-right">
+        {safeValue.toFixed(1)}
       </span>
     </div>
   );
@@ -61,38 +52,35 @@ function RatingBar({ label, value }: { label: string; value: number }) {
 export default function ReviewCard({
   id,
   authorName,
-  isAnonymous,
-  workLifeRating,
-  salaryRating,
-  managementRating,
+  isAnonymous = true,
+  workLifeRating = 0,
+  salaryRating = 0,
+  managementRating = 0,
   reviewText,
-  voteScore: initialVoteScore,
+  voteScore: initialVoteScore = 0,
   createdAt,
   userVote: initialUserVote = null,
   onVote,
 }: ReviewCardProps) {
-  // Local vote state — optimistic UI update er jonno
   const [voteScore, setVoteScore] = useState(initialVoteScore);
   const [userVote, setUserVote] = useState(initialUserVote);
 
-  // Average rating — tintai merge kore ekta number
-  const avgRating = ((workLifeRating + salaryRating + managementRating) / 3).toFixed(1);
+  const safeWorkLife = typeof workLifeRating === "number" ? workLifeRating : 0;
+  const safeSalary = typeof salaryRating === "number" ? salaryRating : 0;
+  const safeManagement = typeof managementRating === "number" ? managementRating : 0;
 
-  // Vote handle kora — upvote ba downvote, toggle support
+  const avgRating = ((safeWorkLife + safeSalary + safeManagement) / 3).toFixed(1);
+
   const handleVote = (type: "UPVOTE" | "DOWNVOTE") => {
-    if (!onVote) return; // login na hole vote kaj korbe na
+    if (!onVote) return;
 
-    // Optimistic update — API response er age UI update
     if (userVote === type) {
-      // Same button again click — undo vote
       setVoteScore((prev) => (type === "UPVOTE" ? prev - 1 : prev + 1));
       setUserVote(null);
     } else if (userVote !== null) {
-      // Different vote — switch kora
       setVoteScore((prev) => (type === "UPVOTE" ? prev + 2 : prev - 2));
       setUserVote(type);
     } else {
-      // New vote
       setVoteScore((prev) => (type === "UPVOTE" ? prev + 1 : prev - 1));
       setUserVote(type);
     }
@@ -100,72 +88,62 @@ export default function ReviewCard({
     onVote(id, type);
   };
 
-  // Date format — e.g. "August 2024"
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("en-BD", {
-      year: "numeric",
-      month: "long",
-    });
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return "Recent";
+    try {
+      return new Date(dateStr).toLocaleDateString("en-BD", {
+        year: "numeric",
+        month: "long",
+      });
+    } catch {
+      return "Recent";
+    }
   };
 
   return (
-    <article
-      className="card animate-fade-in"
-      id={`review-${id}`}
-    >
-      {/* ─── TOP: Author + Date + Avg Rating ────────────────────────────── */}
+    <article className="card animate-fade-in" id={`review-${id}`}>
+      {/* Top Row: Author + Date + Score */}
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
-          {/* Author — anonymous ba real name */}
-          <div className="flex items-center gap-2 mb-0.5">
-            {/* Avatar circle */}
+          <div className="flex items-center gap-2 mb-1">
             <div className="w-7 h-7 rounded-full bg-[var(--primary-fixed)] flex items-center justify-center">
               <span className="font-mono text-xs font-bold text-[var(--primary)]">
                 {isAnonymous ? "A" : (authorName?.charAt(0) ?? "U")}
               </span>
             </div>
-            <span className="text-sm font-medium text-[var(--on-surface)]">
+            <span className="text-sm font-semibold text-[var(--on-surface)]">
               {isAnonymous ? "Anonymous TechTribe Member" : (authorName ?? "Member")}
             </span>
-            {/* Anonymous shield badge */}
             {isAnonymous && (
-              <span className="font-mono text-[9px] font-semibold text-[var(--primary)] bg-[var(--primary-fixed)] px-1.5 py-0.5 rounded-full uppercase tracking-wide">
-                Anonymous
+              <span className="text-xs font-semibold text-[var(--primary)] bg-[var(--primary-fixed)] px-2 py-0.5 rounded-full">
+                Verified Anonymous
               </span>
             )}
           </div>
-          {/* Posted date */}
-          <p className="font-mono text-[10px] text-[var(--on-surface-variant)] uppercase tracking-wider">
-            {formatDate(createdAt)}
-          </p>
+          <p className="text-xs text-[var(--on-surface-variant)]">{formatDate(createdAt)}</p>
         </div>
 
-        {/* Overall average rating */}
         <div className="flex items-center gap-1 bg-[var(--primary-fixed)] px-2.5 py-1 rounded-full flex-shrink-0">
-          <span className="text-[var(--primary)] text-xs" aria-hidden="true">★</span>
-          <span className="font-mono text-xs font-bold text-[var(--primary)]">{avgRating}</span>
+          <StarIcon className="w-3.5 h-3.5 text-[var(--primary)] flex-shrink-0" />
+          <span className="font-mono text-xs font-bold tabular-nums text-[var(--primary)]">{avgRating}</span>
         </div>
       </div>
 
-      {/* ─── RATING BARS ─────────────────────────────────────────────────── */}
-      {/* Triple metric — PRD Section 5.2 */}
-      <div className="flex flex-col gap-2 mb-4 p-3 bg-[var(--surface-low)] rounded-lg">
-        <RatingBar label="Work-Life" value={workLifeRating} />
-        <RatingBar label="Salary" value={salaryRating} />
-        <RatingBar label="Management" value={managementRating} />
+      {/* Triple Metric Rating Bars */}
+      <div className="flex flex-col gap-2.5 mb-4 p-4 bg-[var(--surface-low)] rounded-xl border border-[var(--outline-variant)]">
+        <RatingBar label="Work-Life" value={safeWorkLife} />
+        <RatingBar label="Salary" value={safeSalary} />
+        <RatingBar label="Management" value={safeManagement} />
       </div>
 
-      {/* ─── REVIEW TEXT ─────────────────────────────────────────────────── */}
-      <p className="text-sm text-[var(--on-surface-variant)] leading-relaxed mb-4">
+      {/* Review Text */}
+      <p className="text-sm text-[var(--on-surface-variant)] leading-relaxed max-w-[75ch] mb-4 whitespace-pre-line">
         {reviewText}
       </p>
 
-      {/* ─── VOTE BUTTONS ────────────────────────────────────────────────── */}
-      {/* Upvote/downvote — PRD Section 5.2 community voting */}
+      {/* Community Helpful Votes */}
       <div className="flex items-center gap-3 pt-3 border-t border-[var(--outline-variant)]">
         <span className="text-xs text-[var(--on-surface-variant)]">Helpful?</span>
-
-        {/* Upvote */}
         <button
           onClick={() => handleVote("UPVOTE")}
           className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
@@ -177,30 +155,22 @@ export default function ReviewCard({
           aria-pressed={userVote === "UPVOTE"}
           id={`upvote-review-${id}`}
         >
-          <span aria-hidden="true">↑</span>
-          <span>Yes</span>
+          ▲ Helpful ({voteScore})
         </button>
 
-        {/* Downvote */}
         <button
           onClick={() => handleVote("DOWNVOTE")}
           className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
             userVote === "DOWNVOTE"
-              ? "bg-red-500 text-white"
-              : "bg-[var(--surface-container)] text-[var(--on-surface-variant)] hover:bg-red-50 hover:text-red-600"
+              ? "bg-[var(--primary)] text-white"
+              : "bg-[var(--surface-container)] text-[var(--on-surface-variant)] hover:bg-[var(--surface-high)]"
           }`}
           aria-label="Downvote this review"
           aria-pressed={userVote === "DOWNVOTE"}
           id={`downvote-review-${id}`}
         >
-          <span aria-hidden="true">↓</span>
-          <span>No</span>
+          ▼
         </button>
-
-        {/* Vote score */}
-        <span className="font-mono text-xs text-[var(--on-surface-variant)] ml-auto">
-          {voteScore > 0 ? `+${voteScore}` : voteScore} votes
-        </span>
       </div>
     </article>
   );

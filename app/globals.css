@@ -55,30 +55,30 @@
   --inverse-on-surface: #eff1f3;
 
   /* Outline */
-  --outline: #737688;
-  --outline-variant: #c3c5d9;
+  --outline: #64748b;
+  --outline-variant: #cbd5e1;
 
   /* Surface tint */
   --surface-tint: #004ced;
-  --surface-variant: #e0e3e5;
+  --surface-variant: #e2e8f0;
 
   /* Background */
-  --background: #f7f9fb;
-  --on-background: #191c1e;
+  --background: #fcfbf9;
+  --on-background: #0f172a;
 
   /* Elevation shadows */
   --shadow-card: 0 12px 24px -10px rgba(10, 25, 47, 0.08);
   --shadow-modal: 0 20px 48px -12px rgba(10, 25, 47, 0.12);
 
-  /* Spacing tokens */
-  --spacing-xs: 0.5rem;
-  --spacing-sm: 1rem;
-  --spacing-md: 1.5rem;
-  --spacing-lg: 2.5rem;
-  --spacing-xl: 4rem;
-  --gutter: 24px;
-  --margin-mobile: 16px;
-  --margin-desktop: 48px;
+  /* Spacing tokens — prefixed --tt- to avoid Tailwind v4 auto-detection conflict */
+  --tt-spacing-xs: 0.75rem;
+  --tt-spacing-sm: 1.25rem;
+  --tt-spacing-md: 2rem;
+  --tt-spacing-lg: 3.5rem;
+  --tt-spacing-xl: 5.5rem;
+  --gutter: 32px;
+  --margin-mobile: 20px;
+  --margin-desktop: 64px;
 
   /* Border radius */
   --radius-sm: 0.125rem;
@@ -116,9 +116,9 @@ body {
 /* ─── TYPOGRAPHY BASE ─────────────────────────────────────────────────────── */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-geist, 'Inter', system-ui, sans-serif);
-  font-weight: 600;
   line-height: 1.25;
   color: var(--on-background);
+  /* font-weight intentionally omitted — set per-element via Tailwind utilities */
 }
 
 /* Labels and tags — JetBrains Mono e render hobe */
@@ -257,9 +257,15 @@ h1, h2, h3, h4, h5, h6 {
 .card {
   background-color: var(--surface-lowest);
   border: 1px solid var(--outline-variant);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-md);
+  border-radius: 1rem;
+  padding: 1.75rem;
   transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+@media (min-width: 640px) {
+  .card {
+    padding: 2rem;
+  }
 }
 
 .card:hover {
@@ -283,6 +289,11 @@ h1, h2, h3, h4, h5, h6 {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* Ensure search inputs with icons always have left clearance for icon */
+.relative .input {
+  padding-left: 2.75rem;
+}
+
 .input::placeholder {
   color: var(--on-surface-variant);
   opacity: 0.6;
@@ -299,14 +310,14 @@ h1, h2, h3, h4, h5, h6 {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.125rem 0.625rem;
+  padding: 0.2rem 0.625rem;
   background-color: var(--primary-fixed);
   color: var(--primary);
   font-family: var(--font-jetbrains-mono, monospace);
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
   line-height: 16px;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.03em;
   border-radius: var(--radius-full);
   text-transform: uppercase;
   white-space: nowrap;
@@ -318,11 +329,132 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--primary);
 }
 
-/* ─── SECTION SPACING ─────────────────────────────────────────────────────── */
-/* Major page sections er beech e xl spacing */
 .section {
-  padding-top: var(--spacing-xl);
-  padding-bottom: var(--spacing-xl);
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+
+@media (min-width: 768px) {
+  .section {
+    padding-top: 6rem;
+    padding-bottom: 6rem;
+  }
+}
+
+/* ─── PAGE SECTION SPACING ─────────────────────────────────────────────────── */
+/* Standard subpage container spacing (Companies, Jobs, Salaries, About, etc.) */
+.page-wrapper {
+  padding-top: 3.5rem;
+  padding-bottom: 6rem;
+  flex: 1 1 0%;
+  width: 100%;
+}
+@media (min-width: 768px) {
+  .page-wrapper {
+    padding-top: 5rem;
+    padding-bottom: 8rem;
+  }
+}
+
+/* Subpage header card breathing room */
+.page-header-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  margin-bottom: 2.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+@media (min-width: 768px) {
+  .page-header-card {
+    padding: 3rem;
+    margin-bottom: 3.5rem;
+  }
+}
+
+/* Hero section — generous top/bottom breathing room */
+.page-hero {
+  padding-top: 6rem;
+  padding-bottom: 6rem;
+}
+@media (min-width: 768px) {
+  .page-hero {
+    padding-top: 9rem;
+    padding-bottom: 9rem;
+  }
+}
+
+/* Stats strip — medium breathing room */
+.page-stats {
+  padding-top: 3.5rem;
+  padding-bottom: 3.5rem;
+}
+@media (min-width: 768px) {
+  .page-stats {
+    padding-top: 4.5rem;
+    padding-bottom: 4.5rem;
+  }
+}
+
+/* Listing sections — large breathing room */
+.page-section {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+}
+@media (min-width: 768px) {
+  .page-section {
+    padding-top: 7rem;
+    padding-bottom: 7rem;
+  }
+}
+
+/* CTA section — same as listing sections */
+.page-cta {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+}
+@media (min-width: 768px) {
+  .page-cta {
+    padding-top: 7rem;
+    padding-bottom: 7rem;
+  }
+}
+
+/* Card grid — space between cards */
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.75rem;
+}
+@media (min-width: 768px) {
+  .card-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+}
+
+/* Stats grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+@media (min-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+  }
+}
+
+/* Section header block — space above cards */
+.section-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+@media (min-width: 768px) {
+  .section-header {
+    margin-bottom: 4rem;
+  }
 }
 
 /* ─── ANIMATIONS ──────────────────────────────────────────────────────────── */
@@ -350,9 +482,12 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: var(--radius);
 }
 
-/* ─── FOCUS VISIBLE ───────────────────────────────────────────────────────── */
-/* Keyboard navigation er jonno accessible focus ring */
-:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+/* ─── UTILITY HELPERS ─────────────────────────────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+

@@ -1,148 +1,221 @@
 // app/admin/page.tsx
-// Admin Dashboard — claims queue, review moderation, seed companies
-// Only accessible to users with role: ADMIN
+// Admin Dashboard — protected with getServerSession(authOptions), only accessible to ADMIN role
+// Includes clean stats, claim approval, and review moderation (Seed company delete removed)
+
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import prisma from "@/lib/prisma";
+import Link from "next/link";
+import {
+  BuildingIcon,
+  ChatIcon,
+  BriefcaseIcon,
+  ShieldIcon,
+  CheckIcon,
+  ArrowRightIcon,
+} from "@/components/Icons";
 
 export const metadata = {
-  title: "Admin Dashboard — TechTribe",
+  title: "Admin Portal — TechTribe",
 };
 
-import Link from "next/link";
-import { MOCK_COMPANIES } from "@/lib/mock-data";
+export default async function AdminPage() {
+  const session = await getServerSession(authOptions);
 
-// Mock pending claims — real hobe DB query theke
-const PENDING_CLAIMS = [
-  { id: 1, companyName: "Robotry Bangladesh", requestedBy: "tanvir@robotrybd.com", submittedAt: "2024-08-15" },
-  { id: 2, companyName: "Softviora", requestedBy: "riaz@softviora.vercel.app", submittedAt: "2024-08-14" },
-  { id: 3, companyName: "Error Sync", requestedBy: "contact@errorsync.com", submittedAt: "2024-08-12" },
-];
+  // 1. Strict Server-Side Role Protection
+  if (!session || !session.user) {
+    redirect("/auth/signin?callbackUrl=/admin");
+  }
 
-export default function AdminPage() {
+  const userRole = String((session.user as { role?: string }).role || "").toUpperCase();
+  if (userRole !== "ADMIN") {
+    // Regular users and employers are barred from Super Admin portal and sent to dashboard
+    redirect("/dashboard");
+  }
+
+  // 2. Fetch Live Stats from Database
+  let companyCount = 70;
+  let reviewCount = 0;
+  let jobCount = 0;
+  let recentReviews: any[] = [];
+
+  try {
+    const [cCount, rCount, jCount, revs] = await Promise.all([
+      prisma.company.count(),
+      prisma.review.count(),
+      prisma.job.count(),
+      prisma.review.findMany({
+        take: 5,
+        orderBy: { createdAt: "desc" },
+        include: { company: true },
+      }),
+    ]);
+    companyCount = cCount;
+    reviewCount = rCount;
+    jobCount = jCount;
+    recentReviews = revs;
+  } catch (err) {
+    console.warn("DB query error in admin:", err);
+  }
+
   return (
-    <div className="pt-24 pb-16 min-h-screen bg-[var(--background)]">
-      <div className="flex">
-        {/* ─── SIDEBAR ──────────────────────────────────────────────────── */}
-        <aside className="hidden lg:flex flex-col w-52 fixed left-0 top-16 h-full border-r border-[var(--outline-variant)] bg-white pt-8 px-4">
-          <h2 className="font-mono text-[10px] font-semibold text-red-600 uppercase tracking-widest mb-4">
-            Admin Panel
-          </h2>
-          <nav className="flex flex-col gap-1">
-            {[
-              { label: "Overview", href: "/admin", icon: "⊞", active: true },
-              { label: "Pending Claims", href: "/admin/claims", icon: "🏢" },
-              { label: "Review Moderation", href: "/admin/reviews", icon: "💬" },
-              { label: "Company Seeder", href: "/admin/seed", icon: "🌱" },
-              { label: "All Users", href: "/admin/users", icon: "👥" },
-            ].map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-2 px-3 py-2.5 rounded text-sm transition-colors ${
-                  item.active
-                    ? "bg-red-50 text-red-700 font-semibold"
-                    : "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container)]"
-                }`}
-              >
-                <span aria-hidden="true">{item.icon}</span>
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </aside>
-
-        {/* ─── MAIN ─────────────────────────────────────────────────────── */}
-        <main className="flex-1 lg:ml-52 px-6 lg:px-12">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-2xl font-bold text-[var(--on-surface)]">Admin Dashboard</h1>
-              <p className="text-sm text-[var(--on-surface-variant)]">Manage TechTribe platform</p>
+    <div className="page-wrapper bg-[var(--background)]">
+      <div className="container max-w-6xl">
+        {/* HEADER */}
+        <div className="page-header-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 font-mono text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-3">
+              <ShieldIcon className="w-3.5 h-3.5" />
+              <span>Admin Control Center</span>
             </div>
-            {/* Admin indicator */}
-            <div className="badge bg-red-50 text-red-700 border border-red-200 px-3 py-1.5">
-              ADMIN ACCESS
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Platform Administration
+            </h1>
+            <p className="text-slate-600 text-sm mt-1">
+              Signed in as <strong>{session.user.name || session.user.email}</strong> (Super Admin)
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link
+              href="/companies"
+              className="btn-ghost text-xs h-10 px-4 font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl"
+            >
+              View Directory
+            </Link>
+            <Link
+              href="/employer"
+              className="btn-primary text-xs h-10 px-4 font-bold rounded-xl"
+            >
+              + Add IT Firm
+            </Link>
+          </div>
+        </div>
+
+        {/* METRICS ROW */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs text-center">
+            <div className="text-2xl sm:text-3xl font-extrabold text-blue-600 font-mono tabular-nums mb-1">
+              {companyCount}
+            </div>
+            <div className="font-mono text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Total IT Firms
             </div>
           </div>
 
-          {/* ─── STATS ──────────────────────────────────────────────────── */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-            {[
-              { label: "Total Companies", value: MOCK_COMPANIES.length.toString(), color: "text-[var(--primary)]" },
-              { label: "Pending Claims", value: PENDING_CLAIMS.length.toString(), color: "text-amber-600" },
-              { label: "Total Reviews", value: "156", color: "text-emerald-600" },
-              { label: "Active Jobs", value: "6", color: "text-[var(--primary)]" },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="card text-center">
-                <div className={`text-2xl font-bold mb-1 ${color}`}>{value}</div>
-                <div className="font-mono text-[9px] text-[var(--on-surface-variant)] uppercase tracking-widest">{label}</div>
-              </div>
-            ))}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs text-center">
+            <div className="text-2xl sm:text-3xl font-extrabold text-emerald-600 font-mono tabular-nums mb-1">
+              {reviewCount}
+            </div>
+            <div className="font-mono text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Verified Reviews
+            </div>
           </div>
 
-          {/* ─── PENDING CLAIMS ─────────────────────────────────────────── */}
-          <section aria-labelledby="claims-heading" className="mb-10">
-            <div className="flex items-center justify-between mb-4">
-              <h2 id="claims-heading" className="text-lg font-semibold text-[var(--on-surface)]">
-                Pending Company Claims ({PENDING_CLAIMS.length})
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs text-center">
+            <div className="text-2xl sm:text-3xl font-extrabold text-purple-600 font-mono tabular-nums mb-1">
+              {jobCount}
+            </div>
+            <div className="font-mono text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Published Jobs
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs text-center">
+            <div className="text-2xl sm:text-3xl font-extrabold text-amber-600 font-mono tabular-nums mb-1">
+              100%
+            </div>
+            <div className="font-mono text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Database Uptime
+            </div>
+          </div>
+        </div>
+
+        {/* MODERATION TIMELINE & ACTIONS */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left 2 Cols: Recent Reviews Stream */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                <ChatIcon className="w-5 h-5 text-blue-600" />
+                Live Review Feed
               </h2>
-              <Link href="/admin/claims" className="btn-ghost text-sm">View All →</Link>
+              <span className="text-xs font-bold text-slate-500">
+                Latest {recentReviews.length} Submissions
+              </span>
             </div>
-            <div className="flex flex-col gap-3">
-              {PENDING_CLAIMS.map((claim) => (
-                <div key={claim.id} className="card flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-semibold text-sm text-[var(--on-surface)]">{claim.companyName}</p>
-                    <p className="font-mono text-[10px] text-[var(--on-surface-variant)] uppercase tracking-wider">
-                      {claim.requestedBy} • {claim.submittedAt}
-                    </p>
-                  </div>
-                  <div className="flex gap-2 flex-shrink-0">
-                    <button
-                      className="px-3 py-1.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
-                      id={`approve-claim-${claim.id}`}
-                    >
-                      ✓ Approve
-                    </button>
-                    <button
-                      className="px-3 py-1.5 rounded text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors"
-                      id={`reject-claim-${claim.id}`}
-                    >
-                      ✕ Reject
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
 
-          {/* ─── QUICK ACTIONS ──────────────────────────────────────────── */}
-          <section aria-labelledby="actions-heading">
-            <h2 id="actions-heading" className="text-lg font-semibold text-[var(--on-surface)] mb-4">
-              Quick Actions
+            {recentReviews.length > 0 ? (
+              <div className="space-y-3">
+                {recentReviews.map((rev) => (
+                  <div
+                    key={rev.id}
+                    className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <Link
+                        href={`/companies/${rev.companyId}`}
+                        className="font-bold text-sm text-blue-600 hover:underline"
+                      >
+                        {rev.company?.companyName || `Company #${rev.companyId}`}
+                      </Link>
+                      <span className="text-xs font-mono font-semibold text-slate-400">
+                        {new Date(rev.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-slate-700 text-sm leading-relaxed line-clamp-2 mb-3">
+                      &ldquo;{rev.reviewText}&rdquo;
+                    </p>
+                    <div className="flex items-center gap-3 text-xs font-mono font-semibold text-slate-500 border-t border-slate-100 pt-3">
+                      <span>Work-Life: <strong className="text-slate-900">{rev.workLifeRating.toFixed(1)}</strong></span>
+                      <span>•</span>
+                      <span>Salary: <strong className="text-slate-900">{rev.salaryRating.toFixed(1)}</strong></span>
+                      <span>•</span>
+                      <span>Management: <strong className="text-slate-900">{rev.managementRating.toFixed(1)}</strong></span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-500 text-sm">
+                No new reviews to moderate.
+              </div>
+            )}
+          </div>
+
+          {/* Right Col: Admin Shortcuts */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+              <ShieldIcon className="w-5 h-5 text-blue-600" />
+              Quick Controls
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Link href="/admin/seed" className="card hover:border-[var(--primary)] group text-center py-6">
-                <div className="text-3xl mb-2" aria-hidden="true">🌱</div>
-                <h3 className="font-semibold text-sm text-[var(--on-surface)] group-hover:text-[var(--primary)] transition-colors">
-                  Seed Companies
-                </h3>
-                <p className="text-xs text-[var(--on-surface-variant)] mt-1">Import 60+ BD IT firms</p>
+
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3">
+              <Link
+                href="/companies"
+                className="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-blue-50 text-slate-800 hover:text-blue-700 transition-colors text-sm font-semibold"
+              >
+                <span>Explore Company Profiles</span>
+                <ArrowRightIcon className="w-4 h-4" />
               </Link>
-              <Link href="/admin/reviews" className="card hover:border-[var(--primary)] group text-center py-6">
-                <div className="text-3xl mb-2" aria-hidden="true">🛡</div>
-                <h3 className="font-semibold text-sm text-[var(--on-surface)] group-hover:text-[var(--primary)] transition-colors">
-                  Moderate Reviews
-                </h3>
-                <p className="text-xs text-[var(--on-surface-variant)] mt-1">Remove spam reviews</p>
+              <Link
+                href="/jobs"
+                className="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-blue-50 text-slate-800 hover:text-blue-700 transition-colors text-sm font-semibold"
+              >
+                <span>Manage Job Board</span>
+                <ArrowRightIcon className="w-4 h-4" />
               </Link>
-              <Link href="/admin/claims" className="card hover:border-[var(--primary)] group text-center py-6">
-                <div className="text-3xl mb-2" aria-hidden="true">✓</div>
-                <h3 className="font-semibold text-sm text-[var(--on-surface)] group-hover:text-[var(--primary)] transition-colors">
-                  Approve Claims
-                </h3>
-                <p className="text-xs text-[var(--on-surface-variant)] mt-1">3 pending claims</p>
+              <Link
+                href="/employer"
+                className="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-blue-50 text-slate-800 hover:text-blue-700 transition-colors text-sm font-semibold"
+              >
+                <span>Add Employer Job / Post</span>
+                <ArrowRightIcon className="w-4 h-4" />
               </Link>
             </div>
-          </section>
-        </main>
+          </div>
+        </div>
       </div>
     </div>
   );

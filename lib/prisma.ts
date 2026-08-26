@@ -1,21 +1,28 @@
 // lib/prisma.ts
-// Prisma Client singleton — development e hot reload e multiple instance create hooa theke bachao
-// Backend wire-up korar somoy shob API route e ekhane import korte hobe
+// Prisma Client singleton with MariaDB/MySQL Driver Adapter for Prisma 7
 
 import { PrismaClient } from "@prisma/client";
+import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import * as dotenv from "dotenv";
 
-// Global type declaration — dev mode e global object e store kora hoy
+dotenv.config({ path: ".env.local" });
+
 declare global {
   // eslint-disable-next-line no-var
   var prisma: PrismaClient | undefined;
 }
 
-// Development e global e cache kora — production e fresh instance
-const prisma = global.prisma ?? new PrismaClient({
-  log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-});
+function createPrismaClient() {
+  const connectionString = process.env.DATABASE_URL || "mysql://root:@localhost:3306/techtribe";
+  const adapter = new PrismaMariaDb(connectionString);
+  return new PrismaClient({
+    adapter,
+    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+  });
+}
 
-// Production e global e store kora theke bachano — memory leak prevent
+const prisma = global.prisma ?? createPrismaClient();
+
 if (process.env.NODE_ENV !== "production") {
   global.prisma = prisma;
 }

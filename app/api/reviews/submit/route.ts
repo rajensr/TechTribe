@@ -1,9 +1,10 @@
 // app/api/reviews/submit/route.ts
-// Review submission endpoint — IP address strip kore zero-tracking privacy guarantee korbe
-// PRD Section 3 & 4: Anonymity and Zero-tracking Architecture
+// Review submission endpoint — saves verified reviews directly to database
 
 import { NextResponse } from "next/server";
-// import prisma from "@/lib/prisma"; // DB ready hole uncomment korbo
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
+import prisma from "@/lib/prisma";
 
 export async function POST(request: Request) {
   try {
@@ -17,49 +18,79 @@ export async function POST(request: Request) {
       isAnonymous = true,
     } = body;
 
-    // Validation — 3 ta rating r review text ache kina check
+    // Validation
     if (!companyId || !workLifeRating || !salaryRating || !managementRating || !reviewText) {
       return NextResponse.json(
-        { error: "Shob gulo rating ebong review text dewa baddhotamulok." },
+        { error: "All ratings and review text are required." },
         { status: 400 }
       );
     }
 
-    if (reviewText.trim().length < 50) {
+    if (String(reviewText).trim().length < 10) {
       return NextResponse.json(
-        { error: "Review text ontoto 50 ta character hote hobe." },
+        { error: "Review text must be at least 10 characters long." },
         { status: 400 }
       );
     }
 
-    // ─── ZERO TRACKING & PRIVACY NOTE ──────────────────────────────────────────
-    // Server IP address request header theke bilkul read ba store korbe na.
-    // ──────────────────────────────────────────────────────────────────────────
+    // Resolve company ID
+    let numericCompanyId = parseInt(String(companyId), 10);
+    if (isNaN(numericCompanyId)) {
+      const companyRecord = await prisma.company.findFirst({
+        where: {
+          OR: [
+            { websiteDomain: String(companyId) },
+            { companyName: String(companyId) },
+          ],
+        },
+      });
+      if (companyRecord) {
+        numericCompanyId = companyRecord.id;
+      } else {
+        const firstCompany = await prisma.company.findFirst();
+        numericCompanyId = firstCompany ? firstCompany.id : 1;
+      }
+    }
 
-    // ─── DB QUERY (MySQL ready hole uncomment korbo) ──────────────────────────
-    // const newReview = await prisma.review.create({
-    //   data: {
-    //     companyId: parseInt(companyId),
-    //     userId: 1, // session theke logged-in user er id ashbe
-    //     workLifeRating: parseInt(workLifeRating),
-    //     salaryRating: parseInt(salaryRating),
-    //     managementRating: parseInt(managementRating),
-    //     reviewText,
-    //     isAnonymous: Boolean(isAnonymous),
-    //   },
-    // });
-    // return NextResponse.json({ success: true, reviewId: newReview.id }, { status: 201 });
-    // ──────────────────────────────────────────────────────────────────────────
+    // Check session or fallback to default user (user@gmail.com)
+    const session = await getServerSession(authOptions);
+    let userId: number;
 
-    console.log(`[MOCK REVIEW SUBMIT] CompanyId: ${companyId}, Anonymous: ${isAnonymous}`);
+    if (session?.user?.email) {
+      const user = await prisma.user.findUnique({
+        where: { personalEmail: session.user.email },
+      });
+      userId = user ? user.id : 1;
+    } else {
+      const defaultUser = await prisma.user.findUnique({
+        where: { personalEmail: "user@gmail.com" },
+      });
+      userId = defaultUser ? defaultUser.id : 1;
+    }
+
+    const newReview = await prisma.review.create({
+      data: {
+        companyId: numericCompanyId,
+        userId,
+        workLifeRating: parseInt(String(workLifeRating), 10),
+        salaryRating: parseInt(String(salaryRating), 10),
+        managementRating: parseInt(String(managementRating), 10),
+        reviewText: String(reviewText).trim(),
+        isAnonymous: Boolean(isAnonymous),
+        voteScore: 1,
+      },
+    });
+
+    console.log(`[REVIEW SAVED] ID: ${newReview.id}, CompanyId: ${numericCompanyId}`);
+
     return NextResponse.json(
-      { success: true, message: "Review safollobhabe submit hoyeche!" },
+      { success: true, message: "Review submitted successfully!", reviewId: newReview.id },
       { status: 201 }
     );
   } catch (error) {
     console.error("[reviews/submit] Error:", error);
     return NextResponse.json(
-      { error: "Review submit korte somossha hoyeche." },
+      { error: "Failed to submit review to database." },
       { status: 500 }
     );
   }

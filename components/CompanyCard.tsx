@@ -1,22 +1,21 @@
 // components/CompanyCard.tsx
-// Company card — directory listing + home page featured section e use hobe
-// Card design: logo slot, rating badge, stack tags, trust indicators — stitch mockup match
+// Modern, eye-friendly Company Card with clean typography, badges, and comfortable touch padding
 
 import Link from "next/link";
+import { StarIcon, CheckIcon, LocationIcon, ShieldIcon, ArrowRightIcon } from "@/components/Icons";
 
-// Company card props — mock data ba real API data duita-i support korbe
 export interface CompanyCardProps {
   id: number | string;
   companyName: string;
   location: string;
-  techStack: string;        // comma-separated string, e.g. "React, Node.js, AWS"
-  overallRating?: number;   // 1-5 average rating — undefined hole skeleton dikh
+  techStack: string;
+  overallRating?: number;
   reviewCount?: number;
   isVerified?: boolean;
   isClaimed?: boolean;
   logoUrl?: string;
-  trustBadge?: string;      // e.g. "Top 10 Work-Life Balance", "Remote-First Policy"
-  size?: "sm" | "md";       // sm = compact (4-col grid), md = full card (3-col)
+  trustBadge?: string;
+  size?: "sm" | "md";
 }
 
 export default function CompanyCard({
@@ -32,122 +31,121 @@ export default function CompanyCard({
   trustBadge,
   size = "md",
 }: CompanyCardProps) {
-  // Tech stack string ke array e convert kora — display er jonno
+  // Parse tech stack tags
   const stackTags = techStack
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .slice(0, 3); // max 3 tags show korbo
+    ? techStack
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(0, 3)
+    : [];
 
-  // Rating color — score anuzaayi rang change hobe (WCAG AAA compliant contrast)
-  const getRatingColor = (rating: number) => {
-    if (rating >= 4.5) return "bg-emerald-50 text-emerald-800 border-emerald-300 font-bold";
-    if (rating >= 4.0) return "bg-blue-50 text-blue-800 border-blue-300 font-bold";
-    if (rating >= 3.0) return "bg-amber-100 text-amber-950 border-amber-300 font-bold";
-    return "bg-red-50 text-red-900 border-red-300 font-bold";
-  };
+  const displayRating =
+    typeof overallRating === "number" && !isNaN(overallRating)
+      ? overallRating.toFixed(1)
+      : null;
 
   return (
     <Link
       href={`/companies/${id}`}
-      className={`card group flex flex-col gap-3 cursor-pointer no-underline animate-fade-in ${
-        size === "sm" ? "p-4" : "p-6"
+      className={`group flex flex-col justify-between cursor-pointer no-underline bg-white border border-slate-200 hover:border-blue-500 rounded-2xl transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${
+        size === "sm" ? "p-5" : "p-6 sm:p-7"
       }`}
       aria-label={`View ${companyName} profile`}
       id={`company-card-${id}`}
     >
-      {/* ─── TOP ROW: Logo + Rating ──────────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-3">
-        {/* Company logo slot — rounded rect, DESIGN.md: never circles */}
-        <div className="w-12 h-12 rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-low)] flex items-center justify-center flex-shrink-0 overflow-hidden">
-          {logoUrl ? (
-            <img
-              src={logoUrl}
-              alt={`${companyName} logo`}
-              loading="lazy"
-              decoding="async"
-              className="w-full h-full object-contain p-1"
-            />
+      <div>
+        {/* Top Header: Logo + Name + Verified Badge + Rating */}
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3.5 min-w-0">
+            {/* Company Logo / Initial Tile */}
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center flex-shrink-0 shadow-sm font-mono font-bold text-lg overflow-hidden">
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt={`${companyName} logo`}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-contain p-1.5 bg-white"
+                />
+              ) : (
+                companyName.charAt(0).toUpperCase()
+              )}
+            </div>
+
+            {/* Company Name & Location */}
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h3 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors text-base leading-snug truncate">
+                  {companyName}
+                </h3>
+                {isVerified && (
+                  <span
+                    title="Verified Company"
+                    className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-100 text-blue-700 flex-shrink-0"
+                    aria-label="Verified"
+                  >
+                    <CheckIcon className="w-2.5 h-2.5" />
+                  </span>
+                )}
+              </div>
+              <p className="flex items-center gap-1 text-xs text-slate-500 font-medium mt-0.5 truncate">
+                <LocationIcon className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                <span className="truncate">{location}</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Rating Pill */}
+          {displayRating ? (
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs font-mono font-bold shadow-2xs flex-shrink-0">
+              <StarIcon className="w-3.5 h-3.5 text-amber-500 fill-amber-400 flex-shrink-0" />
+              <span>{displayRating}</span>
+            </div>
           ) : (
-            // Placeholder — company name er first letter
-            <span className="font-mono font-bold text-lg text-[var(--primary)]">
-              {companyName.charAt(0).toUpperCase()}
+            <span className="text-[11px] font-medium text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 flex-shrink-0">
+              New
             </span>
           )}
         </div>
 
-        {/* Rating badge — star + score */}
-        {overallRating !== undefined ? (
-          <div
-            className={`flex items-center gap-1 px-2 py-1 rounded-full border text-xs font-mono font-semibold ${getRatingColor(overallRating)}`}
-          >
-            <span aria-hidden="true">★</span>
-            <span>{overallRating.toFixed(1)}</span>
+        {/* Tech Stack Chips */}
+        {stackTags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3" role="list" aria-label="Tech stack">
+            {stackTags.map((tag) => (
+              <span
+                key={tag}
+                className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-semibold hover:bg-slate-200 transition-colors"
+                role="listitem"
+              >
+                {tag}
+              </span>
+            ))}
           </div>
-        ) : (
-          // Review nai hole dash diekhabo
-          <div className="px-2 py-1 rounded-full border border-[var(--outline-variant)] text-xs font-mono text-[var(--on-surface-variant)] bg-[var(--surface-low)]">
-            No reviews
+        )}
+
+        {/* Trust Highlight Tag */}
+        {trustBadge && (
+          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-100 text-xs font-semibold mb-2">
+            <ShieldIcon className="w-3 h-3 text-blue-600 flex-shrink-0" />
+            <span className="truncate">{trustBadge}</span>
           </div>
         )}
       </div>
 
-      {/* ─── COMPANY INFO ────────────────────────────────────────────────── */}
-      <div className="flex-1">
-        {/* Company name */}
-        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-          <h3
-            className={`font-semibold text-[var(--on-surface)] group-hover:text-[var(--primary)] transition-colors leading-tight ${
-              size === "sm" ? "text-sm" : "text-base"
-            }`}
-          >
-            {companyName}
-          </h3>
-          {/* Verified checkmark — admin approve korlei dekhabe */}
-          {isVerified && (
-            <span
-              title="Verified Company"
-              className="text-[var(--primary)] text-xs"
-              aria-label="Verified"
-            >
-              ✓
-            </span>
-          )}
-        </div>
+      {/* Card Footer: Review count & arrow button */}
+      <div className="pt-3.5 mt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+        <span className="text-slate-500 font-medium tabular-nums">
+          {reviewCount > 0
+            ? `${reviewCount} verified review${reviewCount > 1 ? "s" : ""}`
+            : "No reviews yet"}
+        </span>
 
-        {/* Location — DESIGN.md: uppercase mono font */}
-        <p className="font-mono text-xs font-semibold text-[var(--on-surface-variant)] uppercase tracking-wider mt-0.5">
-          📍 {location}
-        </p>
+        <span className="text-blue-600 font-bold group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+          Explore
+          <ArrowRightIcon className="w-3 h-3" />
+        </span>
       </div>
-
-      {/* ─── TECH STACK TAGS ─────────────────────────────────────────────── */}
-      {/* Pill-shaped chips — 44px touch target compliant on mobile */}
-      <div className="flex flex-wrap gap-2 my-1" role="list" aria-label="Tech stack">
-        {stackTags.map((tag) => (
-          <span key={tag} className="badge text-xs px-3 py-1.5 min-h-[32px] sm:min-h-0 flex items-center justify-center" role="listitem">
-            {tag}
-          </span>
-        ))}
-      </div>
-
-      {/* ─── TRUST BADGE ─────────────────────────────────────────────────── */}
-      {/* e.g. "Top 10 Work-Life Balance" — stitch mockup e aache */}
-      {trustBadge && (
-        <div className="flex items-center gap-1 text-[var(--primary)]">
-          <span className="text-xs" aria-hidden="true">◎</span>
-          <span className="font-mono text-[10px] font-semibold text-[var(--primary)]">
-            {trustBadge}
-          </span>
-        </div>
-      )}
-
-      {/* ─── REVIEW COUNT ────────────────────────────────────────────────── */}
-      {reviewCount > 0 && (
-        <p className="text-xs text-[var(--on-surface-variant)] mt-auto">
-          {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
-        </p>
-      )}
     </Link>
   );
 }

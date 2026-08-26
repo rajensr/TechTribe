@@ -12,11 +12,11 @@ import Link from "next/link";
 
 export default function SignInPage() {
   return (
-    <div className="min-h-screen pt-24 pb-16 flex items-center bg-[var(--surface-low)]">
-      <div className="container">
-        <div className="max-w-md mx-auto">
+    <div className="flex-1 flex flex-col justify-center items-center py-12 md:py-16 bg-[var(--surface-low)] min-h-[calc(100vh-14rem)]">
+      <div className="container flex justify-center">
+        <div className="w-full max-w-md mx-auto">
           {/* Card */}
-          <div className="card bg-white p-8">
+          <div className="card bg-white p-8 shadow-md rounded-2xl">
             {/* Header */}
             <div className="text-center mb-8">
               {/* TechTribe logo mark */}

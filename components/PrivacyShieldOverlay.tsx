@@ -4,7 +4,7 @@
 
 "use client";
 
-import Link from "next/link";
+import WriteReviewModalTrigger from "@/components/WriteReviewModalTrigger";
 
 interface PrivacyShieldOverlayProps {
   companyName: string;
@@ -86,13 +86,12 @@ export default function PrivacyShieldOverlay({
           </div>
 
           {/* CTA button — review likhte protsahit korbe */}
-          <Link
-            href={`/companies/${companyId}?write-review=true`}
-            className="btn-primary w-full justify-center"
-            id={`privacy-shield-review-btn-${companyId}`}
-          >
-            I Work at {companyName}
-          </Link>
+          <WriteReviewModalTrigger
+            companyId={companyId}
+            companyName={companyName}
+            buttonText={`I Work at ${companyName}`}
+            className="btn-primary w-full justify-center text-sm font-bold h-11"
+          />
 
           {/* Privacy note */}
           <p className="font-mono text-[10px] text-[var(--on-surface-variant)] mt-3 uppercase tracking-wider">

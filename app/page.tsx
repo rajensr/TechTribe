@@ -1,256 +1,541 @@
+"use client";
+
 // app/page.tsx
-// Landing page — TechTribe er home, stitch mockup er exact match
-// Sections: Hero search, Popular stacks, Top-Rated Workplaces, Highest Rated Management, CTA
+// TechTribe Homepage — Search Results appear in dedicated section below Hero,
+// leaving WLB & Management sections intact with centered subtitles.
 
+import { useState, useMemo } from "react";
 import Link from "next/link";
-import CompanyCard from "@/components/CompanyCard";
-import { MOCK_COMPANIES } from "@/lib/mock-data";
+import { useRouter } from "next/navigation";
+import {
+  Search,
+  Building2,
+  MessageSquare,
+  BadgeCheck,
+  Star,
+  MapPin,
+  ArrowRight,
+  ShieldCheck,
+  Briefcase,
+  PlusCircle,
+} from "lucide-react";
 
-// Popular stack tags — hero section e show hobe
-const POPULAR_STACKS = ["Node.js", "Laravel", "React", "Django", "Vue", "Flutter", "Python", "Next.js"];
+export interface Company {
+  id: number | string;
+  name: string;
+  location: string;
+  rating: number;
+  reviewCount: number;
+  stacks: string[];
+  highlightTag: string;
+  category: "wlb" | "management" | "both";
+  logoBg: string;
+  initial: string;
+}
 
-// Top companies — work-life rating anuzaayi sort kora
-const TOP_WORKLIFE = MOCK_COMPANIES
-  .filter((c) => c.overallRating !== undefined && c.reviewCount >= 3)
-  .sort((a, b) => (b.workLifeRating ?? 0) - (a.workLifeRating ?? 0))
-  .slice(0, 3);
+// ─── FIXED CURATED COMPANIES FOR HOMEPAGE LEADERBOARDS ─────────────────────────
+const WLB_FEATURED_COMPANIES: Company[] = [
+  {
+    id: 62, // Brain Station 23
+    name: "Brain Station 23",
+    location: "Mohakhali, Dhaka",
+    rating: 4.8,
+    reviewCount: 47,
+    stacks: ["REACT", "NODE.JS", "AI"],
+    highlightTag: "Top 10 Work-Life Balance",
+    category: "both",
+    logoBg: "bg-indigo-600",
+    initial: "B",
+  },
+  {
+    id: 6, // EchoLogyx Ltd
+    name: "EchoLogyx Ltd",
+    location: "Muradpur, Chattogram",
+    rating: 4.6,
+    reviewCount: 23,
+    stacks: ["REACT", "NODE.JS", "GO"],
+    highlightTag: "Remote-First Policy",
+    category: "both",
+    logoBg: "bg-blue-600",
+    initial: "E",
+  },
+  {
+    id: 63, // NewsCred
+    name: "NewsCred",
+    location: "Gulshan-1, Dhaka",
+    rating: 4.6,
+    reviewCount: 31,
+    stacks: ["RUBY", "REACT", "NODE.JS"],
+    highlightTag: "Flexible Hours",
+    category: "wlb",
+    logoBg: "bg-cyan-600",
+    initial: "N",
+  },
+];
 
-// Highest management rated — management rating sort
-const TOP_MANAGEMENT = MOCK_COMPANIES
-  .filter((c) => c.overallRating !== undefined && c.reviewCount >= 3)
-  .sort((a, b) => (b.managementRating ?? 0) - (a.managementRating ?? 0))
-  .slice(0, 4);
+const MANAGEMENT_FEATURED_COMPANIES: Company[] = [
+  {
+    id: 61, // Kaz Software
+    name: "Kaz Software",
+    location: "Dhanmondi, Dhaka",
+    rating: 4.7,
+    reviewCount: 38,
+    stacks: ["PYTHON", "DJANGO", "AWS"],
+    highlightTag: "Top Mentorship",
+    category: "management",
+    logoBg: "bg-emerald-600",
+    initial: "K",
+  },
+  {
+    id: 70, // AuthLab
+    name: "AuthLab",
+    location: "Jalalabad R/A, Sylhet",
+    rating: 4.5,
+    reviewCount: 15,
+    stacks: ["NEXT.JS", "TAILWIND", "GO"],
+    highlightTag: "Transparent Ops",
+    category: "both",
+    logoBg: "bg-sky-600",
+    initial: "A",
+  },
+  {
+    id: 65, // SSL Wireless
+    name: "SSL Wireless",
+    location: "New DOHS Mohakhali, Dhaka",
+    rating: 4.4,
+    reviewCount: 52,
+    stacks: ["JAVA", "SPRING", "FLUTTER"],
+    highlightTag: "Competitive Pay",
+    category: "management",
+    logoBg: "bg-slate-700",
+    initial: "S",
+  },
+];
 
-export const metadata = {
-  title: "TechTribe — Bangladesh's IT Workplace Directory",
-  description:
-    "Find verified employee reviews, salary benchmarks, and job listings from top Bangladeshi IT firms.",
-};
+// All searchable companies for real-time live preview
+const ALL_SEARCHABLE_COMPANIES: Company[] = [
+  ...WLB_FEATURED_COMPANIES,
+  ...MANAGEMENT_FEATURED_COMPANIES,
+  {
+    id: 1,
+    name: "Blendin",
+    location: "Agrabad, Chittagong",
+    rating: 4.3,
+    reviewCount: 12,
+    stacks: ["REACT", "NODE.JS", "TAILWIND"],
+    highlightTag: "Modern Office",
+    category: "both",
+    logoBg: "bg-purple-600",
+    initial: "B",
+  },
+  {
+    id: 2,
+    name: "Xponent Infosystem",
+    location: "Dewanhat, Chittagong",
+    rating: 4.2,
+    reviewCount: 8,
+    stacks: ["PHP", "LARAVEL", "VUE.JS"],
+    highlightTag: "Career Growth",
+    category: "both",
+    logoBg: "bg-teal-600",
+    initial: "X",
+  },
+  {
+    id: 3,
+    name: "Softrobotics",
+    location: "Panchlaish, Chittagong",
+    rating: 4.4,
+    reviewCount: 14,
+    stacks: ["PYTHON", "ROBOTICS", "C++"],
+    highlightTag: "High Innovation",
+    category: "both",
+    logoBg: "bg-rose-600",
+    initial: "S",
+  },
+];
+
+const TRENDING_STACKS = [
+  "All",
+  "Node.js",
+  "React",
+  "Django",
+  "Laravel",
+  "Vue.js",
+  "Flutter",
+  "Python",
+  "Next.js",
+];
 
 export default function HomePage() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedStack, setSelectedStack] = useState("All");
+  const router = useRouter();
+
+  // Search handler that navigates to the directory with search parameters
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (searchQuery.trim()) params.set("q", searchQuery.trim());
+    if (selectedStack !== "All") params.set("stack", selectedStack);
+    router.push(`/companies?${params.toString()}`);
+  };
+
+  const isFiltering = Boolean(searchQuery.trim() || selectedStack !== "All");
+
+  // Search Results for the Dedicated Search Preview Section only
+  const searchResults = useMemo(() => {
+    if (!isFiltering) return [];
+    return ALL_SEARCHABLE_COMPANIES.filter((company) => {
+      const matchesSearch =
+        !searchQuery.trim() ||
+        company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        company.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        company.stacks.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()));
+
+      const matchesStack =
+        selectedStack === "All" ||
+        company.stacks.some((s) => s.toLowerCase() === selectedStack.toLowerCase());
+
+      return matchesSearch && matchesStack;
+    });
+  }, [searchQuery, selectedStack, isFiltering]);
+
   return (
-    <>
-      {/* ─── HERO SECTION ─────────────────────────────────────────────── */}
-      {/* Full-width hero — search bar + popular stacks with header clearance */}
-      <section
-        className="pt-36 sm:pt-40 md:pt-48 pb-20 bg-[var(--background)] text-center flex flex-col items-center justify-center relative z-10"
-        aria-label="Search hero"
-      >
-        <div className="container flex flex-col items-center">
-          {/* Eyebrow label — stitch mockup er "VERIFIED ECOSYSTEM" */}
-          <div className="inline-flex items-center gap-1.5 bg-[var(--primary-fixed)] text-[var(--primary)] font-mono text-[10px] font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full mb-6">
-            <span aria-hidden="true">✓</span>
-            Verified Ecosystem
+    <div className="flex flex-col min-h-screen bg-[var(--background)]">
+
+      {/* ─── HERO SECTION ─── */}
+      <section className="page-hero bg-slate-50/70 border-b border-slate-200">
+        <div className="container flex flex-col items-center text-center">
+
+          {/* Eyebrow badge */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-mono font-bold uppercase tracking-wider mb-6">
+            <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+            <span>Bangladesh&apos;s Verified Tech Community</span>
           </div>
 
-          {/* Main headline — responsive scaling for mobile, tablet, and desktop */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-[var(--on-background)] leading-tight tracking-tight mb-4 max-w-3xl px-2">
-            Find your next{" "}
-            <span className="text-[var(--primary)]">Bangladeshi IT</span>
-            <br className="hidden sm:inline" />
-            {" "}workplace...
+          {/* Main Headline */}
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.1] max-w-3xl mb-5 text-center">
+            Transparent Reviews for <span className="text-blue-600">Bangladeshi Tech</span>
           </h1>
 
-          <p className="text-[var(--on-surface-variant)] text-base sm:text-lg max-w-xl mx-auto mb-8 sm:mb-10 text-center px-4">
-            Access insider company reviews, salary benchmarks, and tech stacks
-            from verified professionals across Bangladesh.
+          {/* Subtitle */}
+          <p className="text-base sm:text-lg md:text-xl text-slate-600 max-w-2xl leading-relaxed mb-8 text-center">
+            Explore 70+ verified IT companies across Dhaka, Chattogram &amp; Sylhet. Real culture ratings, work-life balance insights, and calibrated engineering salaries.
           </p>
 
-          {/* ─── SEARCH BAR ──────────────────────────────────────────────── */}
-          {/* Real-time search — companies directory e jaabe */}
+          {/* Working Search Bar Form */}
           <form
-            action="/companies"
-            method="GET"
-            className="flex flex-col sm:flex-row items-center w-full max-w-xl mx-auto gap-3 mb-6 px-4"
-            role="search"
+            onSubmit={handleSearch}
+            className="w-full max-w-2xl mb-7"
           >
-            <div className="flex-1 w-full relative">
-              {/* Search icon */}
-              <span
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--on-surface-variant)] text-base pointer-events-none"
-                aria-hidden="true"
+            <div className="bg-white border border-slate-300 rounded-2xl p-2 shadow-sm hover:border-blue-500 focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="flex items-center flex-1 pl-3 pr-2 py-1">
+                <Search className="w-5 h-5 text-slate-400 mr-3 flex-shrink-0" />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by company name, stack, or city..."
+                  className="w-full h-10 sm:h-11 bg-transparent text-sm font-medium text-slate-900 focus:outline-none placeholder:text-slate-400"
+                  aria-label="Search companies"
+                />
+              </div>
+              <button
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700 text-white h-11 px-7 rounded-xl text-sm font-bold active:scale-95 transition-all w-full sm:w-auto flex-shrink-0 flex items-center justify-center gap-2"
               >
-                🔍
-              </span>
-              <input
-                type="search"
-                name="q"
-                placeholder="Search by name, stack, or location..."
-                className="input pl-11 h-12 text-sm w-full shadow-xs"
-                aria-label="Search companies"
-                id="hero-search-input"
-              />
+                <span>Search</span>
+              </button>
             </div>
-            <button
-              type="submit"
-              className="btn-primary h-12 px-6 whitespace-nowrap w-full sm:w-auto text-sm font-semibold active:scale-95 transition-transform duration-150"
-              id="hero-search-btn"
-            >
-              Search
-            </button>
           </form>
 
-          {/* ─── POPULAR STACKS ──────────────────────────────────────────── */}
-          {/* Quick filter chips — 40px touch targets for mobile accessibility */}
-          <div className="flex flex-wrap items-center justify-center gap-2 max-w-2xl px-2">
-            <span className="font-mono text-[10px] text-[var(--on-surface-variant)] uppercase tracking-widest mr-1">
-              Popular Stacks:
+          {/* Tech Stack Pills */}
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <span className="font-mono text-xs font-semibold text-slate-500 uppercase tracking-wider mr-1 hidden sm:inline">
+              Popular:
             </span>
-            {POPULAR_STACKS.map((stack) => (
-              <Link
-                key={stack}
-                href={`/companies?stack=${encodeURIComponent(stack)}`}
-                className={`px-3.5 py-2 min-h-[40px] sm:min-h-0 inline-flex items-center justify-center rounded-full text-xs font-semibold border transition-all duration-150 ${
-                  stack === "Node.js"
-                    ? "bg-[var(--primary-fixed)] border-[var(--primary)] text-[var(--primary)] font-bold shadow-xs"
-                    : "bg-white border-[var(--outline-variant)] text-[var(--on-surface-variant)] hover:border-[var(--primary)] hover:text-[var(--primary)] hover:bg-[var(--primary-fixed)]"
-                }`}
-                id={`stack-chip-${stack.toLowerCase().replace(".", "-")}`}
-              >
-                {stack}
-              </Link>
-            ))}
+            {TRENDING_STACKS.map((stack) => {
+              const isActive = selectedStack === stack;
+              return (
+                <button
+                  key={stack}
+                  type="button"
+                  onClick={() => setSelectedStack(stack)}
+                  className={`px-3.5 py-1 rounded-full text-xs font-semibold border transition-all duration-150 active:scale-95 ${
+                    isActive
+                      ? "bg-blue-600 text-white border-blue-600 shadow-2xs"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                  }`}
+                >
+                  {stack}
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* ─── TOP-RATED WORK-LIFE SECTION ──────────────────────────────────── */}
-      {/* 3-column card grid — stitch mockup match */}
-      <section className="section bg-[var(--surface-low)]" aria-labelledby="worklife-heading">
-        <div className="container">
-          {/* Section header */}
-          <div className="flex items-end justify-between mb-8">
-            <div>
-              <h2
-                id="worklife-heading"
-                className="text-2xl md:text-3xl font-semibold text-[var(--on-background)] mb-1"
-              >
-                Top-Rated Workplaces for Work-Life Balance
-              </h2>
-              <p className="text-[var(--on-surface-variant)] text-sm">
-                Based on thousands of verified employee reviews from across Bangladesh.
-              </p>
+      {/* ─── DEDICATED SEARCH RESULTS SECTION (Only appears when user searches/filters) ─── */}
+      {isFiltering && (
+        <section className="py-12 bg-blue-50/50 border-b border-blue-200">
+          <div className="container">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">
+                  Search Results ({searchResults.length})
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-600">
+                  {searchQuery && `Matching "${searchQuery}" `}
+                  {selectedStack !== "All" && `in ${selectedStack}`}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Link
+                  href={`/companies?${new URLSearchParams({
+                    ...(searchQuery && { q: searchQuery }),
+                    ...(selectedStack !== "All" && { stack: selectedStack }),
+                  }).toString()}`}
+                  className="text-xs font-bold text-blue-700 bg-white px-4 py-2 rounded-xl border border-blue-300 hover:bg-blue-50 shadow-2xs"
+                >
+                  View Full Directory →
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedStack("All");
+                  }}
+                  className="text-xs font-bold text-slate-500 hover:underline uppercase tracking-wide"
+                >
+                  Clear
+                </button>
+              </div>
             </div>
+
+            {searchResults.length > 0 ? (
+              <div className="card-grid">
+                {searchResults.map((company) => (
+                  <CompanyCardItem key={company.id} company={company} />
+                ))}
+              </div>
+            ) : (
+              /* If company does not exist — Add Company CTA */
+              <div className="bg-white border border-blue-200 rounded-3xl p-8 sm:p-12 text-center shadow-xs max-w-xl mx-auto">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4">
+                  <Building2 className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">
+                  Company not listed yet?
+                </h3>
+                <p className="text-slate-600 text-sm leading-relaxed mb-6">
+                  We couldn&apos;t find &ldquo;{searchQuery || selectedStack}&rdquo; in our current index. You can add this workplace or submit an anonymous review to create its profile!
+                </p>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <Link
+                    href="/employer"
+                    className="btn-primary text-xs h-11 px-6 font-bold rounded-xl w-full sm:w-auto inline-flex items-center justify-center gap-2"
+                  >
+                    <PlusCircle className="w-4 h-4" />
+                    <span>Add / Claim Company</span>
+                  </Link>
+                  <Link
+                    href="/auth/register"
+                    className="btn-secondary text-xs h-11 px-6 font-bold rounded-xl w-full sm:w-auto inline-flex items-center justify-center"
+                  >
+                    Write Anonymous Review
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ─── STATS STRIP ─── */}
+      <section className="page-stats bg-white border-b border-slate-200">
+        <div className="container">
+          <div className="stats-grid">
+            {[
+              { label: "Verified IT Firms", value: "70+", icon: Building2 },
+              { label: "Employee Reviews", value: "1,200+", icon: MessageSquare },
+              { label: "Avg Engineer Salary", value: "৳85k/mo", icon: Briefcase },
+              { label: "Salary Transparency", value: "100%", icon: ShieldCheck },
+            ].map((metric) => {
+              const IconComp = metric.icon;
+              return (
+                <div
+                  key={metric.label}
+                  className="border border-slate-200 rounded-2xl flex flex-col items-center text-center hover:border-blue-500 hover:shadow-xs transition-all p-6 sm:p-8"
+                >
+                  <div className="rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center w-12 h-12 mb-3">
+                    <IconComp className="w-5 h-5" />
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tabular-nums mb-1">{metric.value}</div>
+                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider leading-tight">{metric.label}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── FIXED CURATED COMPANY SECTIONS ─── */}
+      <div className="container">
+
+        {/* ── Section 1: Top-Rated Workplaces for Work-Life Balance ── */}
+        <section className="page-section">
+          <div className="section-header text-center flex flex-col items-center">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-3 text-center">
+              Top-Rated Workplaces for Work-Life Balance
+            </h2>
+            <p className="text-slate-500 text-base max-w-xl mx-auto leading-relaxed mb-6 text-center">
+              Ranked by verified Bangladeshi software engineers and tech professionals.
+            </p>
             <Link
               href="/companies?sort=work_life"
-              className="btn-ghost text-sm hidden md:flex items-center gap-1"
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-600 hover:text-blue-700 px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded-full border border-blue-200 transition-colors group"
             >
-              View All →
+              Explore All Work-Life Balance Firms
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
 
-          {/* 3-column responsive grid with mobile horizontal swipe fallback */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:overflow-visible">
-            {TOP_WORKLIFE.map((company) => (
-              <CompanyCard
-                key={company.id}
-                id={company.id}
-                companyName={company.companyName}
-                location={company.location}
-                techStack={company.techStack}
-                overallRating={company.workLifeRating}
-                reviewCount={company.reviewCount}
-                isVerified={company.isVerified}
-                trustBadge={company.trustBadge}
-                logoUrl={company.logoUrl ?? undefined}
-              />
+          <div className="card-grid">
+            {WLB_FEATURED_COMPANIES.map((company) => (
+              <CompanyCardItem key={company.id} company={company} />
             ))}
           </div>
+        </section>
 
-          {/* Mobile — view all link */}
-          <div className="text-center mt-6 md:hidden">
-            <Link href="/companies?sort=work_life" className="btn-secondary text-sm active:scale-95 transition-transform">
-              View All →
-            </Link>
-          </div>
-        </div>
-      </section>
+        <hr className="border-slate-200 my-2" />
 
-      {/* ─── HIGHEST RATED MANAGEMENT ─────────────────────────────────────── */}
-      {/* 4-column compact cards */}
-      <section className="section" aria-labelledby="management-heading">
-        <div className="container">
-          <div className="flex items-end justify-between mb-8">
-            <div>
-              <h2
-                id="management-heading"
-                className="text-2xl md:text-3xl font-semibold text-[var(--on-background)] mb-1"
-              >
-                Highest Rated Management Teams
-              </h2>
-              <p className="text-[var(--on-surface-variant)] text-sm">
-                Leadership excellence and professional development focus.
-              </p>
-            </div>
+        {/* ── Section 2: Highest Rated Management Teams ── */}
+        <section className="page-section">
+          <div className="section-header text-center flex flex-col items-center">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-3 text-center">
+              Highest Rated Management Teams
+            </h2>
+            <p className="text-slate-500 text-base max-w-xl mx-auto leading-relaxed mb-6 text-center">
+              Evaluated on leadership transparency, mentorship, and career growth.
+            </p>
             <Link
               href="/companies?sort=management"
-              className="btn-ghost text-sm hidden md:flex items-center gap-1"
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-600 hover:text-blue-700 px-4 py-2 bg-blue-50 hover:bg-blue-100 rounded-full border border-blue-200 transition-colors group"
             >
-              View All →
+              Explore Top Management Teams
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
 
-          {/* 4-column compact grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {TOP_MANAGEMENT.map((company) => (
-              <CompanyCard
-                key={company.id}
-                id={company.id}
-                companyName={company.companyName}
-                location={company.location}
-                techStack={company.techStack}
-                overallRating={company.managementRating}
-                reviewCount={company.reviewCount}
-                isVerified={company.isVerified}
-                trustBadge={company.trustBadge}
-                logoUrl={company.logoUrl ?? undefined}
-                size="sm"
-              />
+          <div className="card-grid">
+            {MANAGEMENT_FEATURED_COMPANIES.map((company) => (
+              <CompanyCardItem key={company.id} company={company} />
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ─── CTA BANNER ───────────────────────────────────────────────────── */}
-      {/* "Is your workplace hiring?" — high contrast card banner */}
-      <section
-        className="py-16 md:py-20 bg-[var(--primary)] text-white relative overflow-hidden"
-        aria-labelledby="cta-heading"
-      >
-        <div className="container relative z-10">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8 bg-white/10 backdrop-blur-md p-8 md:p-12 rounded-2xl border border-white/20 shadow-xl">
-            <div className="text-white max-w-xl text-center md:text-left">
-              <h2 id="cta-heading" className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-3 tracking-tight drop-shadow-xs">
-                Is your workplace hiring?
-              </h2>
-              <p className="text-blue-100 text-base sm:text-lg leading-relaxed font-normal">
-                Contribute to the ecosystem by sharing your experience and helping
-                peers find great workplaces. All reviews are anonymous and verified
-                by our system.
-              </p>
-            </div>
+      </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto flex-shrink-0">
-              {/* Write a review — Solid White button with dark blue bold text (High Contrast) */}
+      {/* ─── CTA BANNER ─── */}
+      <section className="page-cta bg-slate-50 border-t border-slate-200">
+        <div className="container">
+          <div className="bg-blue-600 rounded-3xl text-white shadow-lg flex flex-col items-center text-center p-8 sm:p-14">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-4 leading-tight">
+              Is your workplace hiring?
+            </h2>
+            <p className="text-blue-100 text-base sm:text-lg leading-relaxed max-w-xl mb-8">
+              Share your experience anonymously or explore companies across Bangladesh.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto justify-center">
               <Link
-                href="/auth/register"
-                className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl bg-white text-[var(--primary)] font-extrabold text-base shadow-lg hover:bg-slate-100 transition-all duration-200 active:scale-95 cursor-pointer no-underline"
-                id="cta-write-review-btn"
+                href="/companies"
+                className="bg-white text-blue-600 hover:bg-blue-50 h-12 px-8 rounded-xl font-bold text-sm shadow-sm inline-flex items-center justify-center active:scale-95 transition-all"
               >
-                ✍ Write a Review
+                Browse All Companies
               </Link>
-              {/* Claim company profile — High contrast dark navy button with white text */}
               <Link
-                href="/employer"
-                className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl bg-[#001452] text-white hover:bg-[#001d78] border-2 border-white/40 font-bold text-base shadow-md transition-all duration-200 active:scale-95 cursor-pointer no-underline"
-                id="cta-claim-company-btn"
+                href="/jobs"
+                className="border-2 border-white/80 hover:bg-white/10 text-white h-12 px-8 rounded-xl font-bold text-sm inline-flex items-center justify-center active:scale-95 transition-all"
               >
-                🏢 Claim Company Profile
+                Browse Job Board
               </Link>
             </div>
           </div>
         </div>
       </section>
-    </>
+
+    </div>
+  );
+}
+
+// ─── HOMEPAGE COMPANY CARD ITEM COMPONENT ────────────────────────────────────
+
+function CompanyCardItem({ company }: { company: Company }) {
+  return (
+    <Link
+      href={`/companies/${company.id}`}
+      className="group bg-white border border-slate-200 hover:border-blue-500 rounded-2xl p-6 sm:p-7 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 flex flex-col justify-between"
+    >
+      <div>
+        {/* Top row */}
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div
+              className={`w-12 h-12 rounded-xl ${company.logoBg} text-white font-bold flex items-center justify-center shadow-2xs flex-shrink-0`}
+            >
+              {company.initial}
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-bold text-slate-900 text-base leading-tight group-hover:text-blue-600 transition-colors truncate">
+                  {company.name}
+                </h3>
+                <BadgeCheck className="w-4 h-4 text-blue-600 flex-shrink-0" />
+              </div>
+              <p className="text-xs text-slate-500 font-medium flex items-center gap-1 mt-1 truncate">
+                <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                <span className="truncate">{company.location}</span>
+              </p>
+            </div>
+          </div>
+
+          <span className="bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 flex-shrink-0">
+            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+            <span>{company.rating.toFixed(1)}</span>
+          </span>
+        </div>
+
+        {/* Tech Stack Tags */}
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {company.stacks.map((stack) => (
+            <span
+              key={stack}
+              className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-semibold hover:bg-slate-200 transition-colors"
+            >
+              {stack}
+            </span>
+          ))}
+        </div>
+
+        {/* Culture Highlight Badge */}
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-md text-xs font-semibold">
+          <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+          <span>{company.highlightTag}</span>
+        </div>
+      </div>
+
+      {/* Footer Row */}
+      <div className="pt-4 mt-6 border-t border-slate-100 flex items-center justify-between">
+        <span className="text-xs font-medium text-slate-500 tabular-nums">
+          {company.reviewCount} verified reviews
+        </span>
+
+        <span className="text-xs font-bold text-blue-600 group-hover:text-blue-700 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+          <span>Explore Team</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </span>
+      </div>
+    </Link>
   );
 }

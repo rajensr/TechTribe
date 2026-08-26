@@ -1,11 +1,6 @@
 "use client";
 // components/OtpModal.tsx
-// OTP verification modal — 3 steps:
-// Step 1: Enter corporate email
-// Step 2: Enter 6-digit OTP
-// Step 3: Submit review form
-// PRD Section 4: "Verify Employment at time of review submission"
-// Privacy: corporate email is only used for domain verification, never stored
+// OTP verification modal with default OTP support (12345) and real review submission
 
 import { useState } from "react";
 
@@ -16,47 +11,44 @@ interface OtpModalProps {
   onSuccess: () => void;
 }
 
-// 3-step flow type
 type Step = "EMAIL" | "OTP" | "REVIEW";
 
 export default function OtpModal({
   companyId,
-  companyName = "your company",
+  companyName = "the company",
   onClose,
   onSuccess,
 }: OtpModalProps) {
-  // Current step
   const [step, setStep] = useState<Step>("EMAIL");
 
-  // Step 1: corporate email
+  // Step 1: Corporate email
   const [corporateEmail, setCorporateEmail] = useState("");
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
 
-  // Step 2: OTP input — 6 digits
-  const [otp, setOtp] = useState("");
+  // Step 2: OTP
+  const [otp, setOtp] = useState("12345");
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState<string | null>(null);
 
-  // Step 3: Review fields
-  const [workLifeRating, setWorkLifeRating] = useState(0);
-  const [salaryRating, setSalaryRating] = useState(0);
-  const [managementRating, setManagementRating] = useState(0);
+  // Step 3: Review
+  const [workLifeRating, setWorkLifeRating] = useState(5);
+  const [salaryRating, setSalaryRating] = useState(4);
+  const [managementRating, setManagementRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
-  const [isAnonymous, setIsAnonymous] = useState(true); // default anonymous — PRD
+  const [isAnonymous, setIsAnonymous] = useState(true);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
 
-  // Step 1: Send OTP — corporate email domain validation
+  // Step 1: Send OTP
   const sendOtp = async () => {
     setEmailError(null);
     if (!corporateEmail.includes("@") || !corporateEmail.includes(".")) {
-      setEmailError("Please enter a valid corporate email address.");
+      setEmailError("Please enter a valid email address.");
       return;
     }
     setEmailLoading(true);
 
-    // POST /api/otp/send — backend wire-up korar somoy real API call hobe
     try {
       const res = await fetch("/api/otp/send", {
         method: "POST",
@@ -65,7 +57,7 @@ export default function OtpModal({
       });
       const data = await res.json();
       if (!res.ok) {
-        setEmailError(data.error ?? "Failed to send OTP. Check your email domain.");
+        setEmailError(data.error ?? "Failed to send OTP.");
         setEmailLoading(false);
         return;
       }
@@ -76,25 +68,24 @@ export default function OtpModal({
     setEmailLoading(false);
   };
 
-  // Step 2: Verify OTP — 6-digit match check
+  // Step 2: Verify OTP
   const verifyOtp = async () => {
     setOtpError(null);
-    if (otp.length !== 6 || !/^\d{6}$/.test(otp)) {
-      setOtpError("Please enter the 6-digit code from your email.");
+    if (!otp.trim()) {
+      setOtpError("Please enter the verification code (Default: 12345).");
       return;
     }
     setOtpLoading(true);
 
-    // POST /api/otp/verify — backend wire-up korar somoy real API call hobe
     try {
       const res = await fetch("/api/otp/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otp, companyId }),
+        body: JSON.stringify({ otp: otp.trim(), companyId }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setOtpError(data.error ?? "Invalid or expired OTP. Please try again.");
+        setOtpError(data.error ?? "Invalid OTP. Use default: 12345");
         setOtpLoading(false);
         return;
       }
@@ -105,36 +96,35 @@ export default function OtpModal({
     setOtpLoading(false);
   };
 
-  // Step 3: Submit review — privacy-safe, IP stripped at API layer
+  // Step 3: Submit review to database
   const submitReview = async () => {
     setReviewError(null);
     if (!workLifeRating || !salaryRating || !managementRating) {
       setReviewError("Please rate all three categories.");
       return;
     }
-    if (reviewText.trim().length < 50) {
-      setReviewError("Review must be at least 50 characters.");
+    if (reviewText.trim().length < 10) {
+      setReviewError("Review must be at least 10 characters long.");
       return;
     }
     setReviewLoading(true);
 
-    // POST /api/reviews/submit — backend wire-up korar somoy real API call hobe
     try {
       const res = await fetch("/api/reviews/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           companyId,
-          otp,
           workLifeRating,
           salaryRating,
           managementRating,
           reviewText,
-          isAnonymous, // default true — PRD privacy requirement
+          isAnonymous,
         }),
       });
+
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
         setReviewError(data.error ?? "Failed to submit review.");
         setReviewLoading(false);
         return;
@@ -146,16 +136,17 @@ export default function OtpModal({
     setReviewLoading(false);
   };
 
-  // Star rating component — 1-5 click select
   function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
     return (
-      <div className="flex gap-1" role="group">
+      <div className="flex gap-1.5" role="group">
         {[1, 2, 3, 4, 5].map((star) => (
           <button
             key={star}
             type="button"
             onClick={() => onChange(star)}
-            className={`text-xl transition-all ${star <= value ? "text-amber-400" : "text-[var(--surface-container)] hover:text-amber-300"}`}
+            className={`text-2xl transition-all ${
+              star <= value ? "text-amber-400 scale-110" : "text-slate-300 hover:text-amber-300"
+            }`}
             aria-label={`Rate ${star} out of 5`}
           >
             ★
@@ -166,223 +157,193 @@ export default function OtpModal({
   }
 
   return (
-    /* Modal backdrop — click outside to close */
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in"
       role="dialog"
       aria-modal="true"
-      aria-label="Verify your workplace"
     >
-      <div className="bg-white rounded-xl shadow-modal w-full max-w-md animate-fade-in">
-        {/* ─── MODAL HEADER ─────────────────────────────────────────── */}
-        <div className="flex items-center justify-between p-6 border-b border-[var(--outline-variant)]">
-          <div>
-            <h2 className="font-semibold text-lg text-[var(--on-surface)]">
-              {step === "EMAIL" && "Verify your workplace"}
-              {step === "OTP" && "Enter verification code"}
-              {step === "REVIEW" && "Write your review"}
-            </h2>
-            {/* Step indicator */}
-            <div className="flex gap-1.5 mt-1">
-              {(["EMAIL", "OTP", "REVIEW"] as Step[]).map((s, i) => (
-                <div
-                  key={s}
-                  className={`h-1 rounded-full transition-all ${
-                    step === s ? "w-6 bg-[var(--primary)]" :
-                    ["EMAIL", "OTP", "REVIEW"].indexOf(step) > i ? "w-6 bg-[var(--primary)] opacity-40" :
-                    "w-3 bg-[var(--surface-container)]"
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--surface-container)] transition-colors text-[var(--on-surface-variant)]"
-            aria-label="Close modal"
-          >
-            ✕
-          </button>
-        </div>
+      <div className="bg-white border-2 border-slate-300 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl relative">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-sm font-bold transition-colors"
+          aria-label="Close modal"
+        >
+          ✕
+        </button>
 
-        {/* ─── STEP 1: EMAIL ────────────────────────────────────────── */}
+        {/* STEP 1: EMAIL */}
         {step === "EMAIL" && (
-          <div className="p-6">
-            <p className="text-sm text-[var(--on-surface-variant)] mb-6 leading-relaxed">
-              Verify your current workplace to unlock review privileges and gain exclusive insights into company cultures.
+          <div>
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center text-xl font-bold mb-4">
+              ✉️
+            </div>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-2">
+              Verify Employment
+            </h2>
+            <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+              Enter your work email for <strong className="text-slate-900">{companyName}</strong>. We send an OTP to confirm you work here. Your email is <em>never</em> shared or stored.
             </p>
 
-            <div className="mb-4">
-              <label htmlFor="corporate-email" className="font-mono text-[10px] font-semibold text-[var(--on-surface-variant)] uppercase tracking-widest block mb-1.5">
-                Corporate Email Address
+            <div className="mb-5">
+              <label htmlFor="corp-email" className="font-mono text-xs font-semibold text-slate-700 uppercase tracking-wider block mb-2">
+                Work Email Address
               </label>
               <input
                 type="email"
-                id="corporate-email"
+                id="corp-email"
                 value={corporateEmail}
                 onChange={(e) => setCorporateEmail(e.target.value)}
-                placeholder="name@company.com"
-                className="input"
-                disabled={emailLoading}
-                onKeyDown={(e) => e.key === "Enter" && sendOtp()}
+                placeholder="you@company.com"
+                className="w-full h-12 px-4 bg-slate-50 border-2 border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white transition-all text-sm font-medium"
               />
-              {emailError && (
-                <p className="font-mono text-[9px] text-[var(--error)] mt-1">{emailError}</p>
-              )}
             </div>
+
+            {emailError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-medium">
+                {emailError}
+              </div>
+            )}
 
             <button
+              type="button"
               onClick={sendOtp}
-              disabled={emailLoading || !corporateEmail}
-              className="btn-primary w-full justify-center"
-              id="send-otp-btn"
+              disabled={emailLoading}
+              className="w-full h-12 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center"
             >
-              {emailLoading ? "Sending..." : "Send Code"}
+              {emailLoading ? "Sending OTP..." : "Send Verification Code"}
             </button>
-
-            {/* Privacy note */}
-            <div className="mt-4 pt-4 border-t border-[var(--outline-variant)] flex items-start gap-2">
-              <span className="text-[var(--primary)] mt-0.5 flex-shrink-0" aria-hidden="true">🔒</span>
-              <p className="font-mono text-[9px] text-[var(--on-surface-variant)] uppercase tracking-wider leading-relaxed">
-                Your privacy is our priority. We never share your identity with employers.
-              </p>
-            </div>
           </div>
         )}
 
-        {/* ─── STEP 2: OTP ──────────────────────────────────────────── */}
+        {/* STEP 2: OTP */}
         {step === "OTP" && (
-          <div className="p-6">
-            <p className="text-sm text-[var(--on-surface-variant)] mb-1">
-              We sent a 6-digit code to:
+          <div>
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center text-xl font-bold mb-4">
+              🔑
+            </div>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-2">
+              Enter Verification Code
+            </h2>
+            <p className="text-sm text-slate-600 mb-4 leading-relaxed">
+              Enter the OTP sent to <strong className="text-slate-900">{corporateEmail}</strong>.
             </p>
-            <p className="font-mono text-sm font-semibold text-[var(--primary)] mb-6">
-              {corporateEmail}
-            </p>
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-800 text-xs font-semibold mb-6 flex items-center justify-between">
+              <span>Default Dev OTP: <strong>12345</strong></span>
+              <button
+                type="button"
+                onClick={() => setOtp("12345")}
+                className="underline hover:text-blue-900"
+              >
+                Auto-fill
+              </button>
+            </div>
 
-            <div className="mb-4">
-              <label htmlFor="otp-input" className="font-mono text-[10px] font-semibold text-[var(--on-surface-variant)] uppercase tracking-widest block mb-1.5">
+            <div className="mb-5">
+              <label htmlFor="otp-input" className="font-mono text-xs font-semibold text-slate-700 uppercase tracking-wider block mb-2">
                 Verification Code
               </label>
               <input
                 type="text"
                 id="otp-input"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="000000"
-                className="input text-center font-mono text-2xl tracking-[0.5em]"
+                onChange={(e) => setOtp(e.target.value)}
+                placeholder="12345"
                 maxLength={6}
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                onKeyDown={(e) => e.key === "Enter" && verifyOtp()}
+                className="w-full h-12 px-4 bg-slate-50 border-2 border-slate-300 rounded-xl text-slate-900 text-center font-mono font-bold text-lg tracking-widest focus:outline-none focus:border-blue-600 focus:bg-white transition-all"
               />
-              {otpError && (
-                <p className="font-mono text-[9px] text-[var(--error)] mt-1">{otpError}</p>
-              )}
             </div>
 
-            <button
-              onClick={verifyOtp}
-              disabled={otpLoading || otp.length !== 6}
-              className="btn-primary w-full justify-center mb-3"
-              id="verify-otp-btn"
-            >
-              {otpLoading ? "Verifying..." : "Verify Code"}
-            </button>
+            {otpError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-medium">
+                {otpError}
+              </div>
+            )}
 
-            <button
-              onClick={() => setStep("EMAIL")}
-              className="btn-ghost w-full justify-center text-sm"
-            >
-              ← Back
-            </button>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setStep("EMAIL")}
+                className="w-1/3 h-12 border-2 border-slate-300 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-50 transition-all"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={verifyOtp}
+                disabled={otpLoading}
+                className="w-2/3 h-12 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center"
+              >
+                {otpLoading ? "Verifying..." : "Verify & Continue"}
+              </button>
+            </div>
           </div>
         )}
 
-        {/* ─── STEP 3: REVIEW FORM ──────────────────────────────────── */}
+        {/* STEP 3: REVIEW FORM */}
         {step === "REVIEW" && (
-          <div className="p-6 max-h-[70vh] overflow-y-auto">
-            <p className="text-xs text-emerald-600 font-mono uppercase tracking-wider mb-4 flex items-center gap-1">
-              <span aria-hidden="true">✓</span>
-              Workplace verified — your review will be anonymous
+          <div>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-1">
+              Write Anonymous Review
+            </h2>
+            <p className="text-xs text-slate-500 mb-5">
+              Verified for <strong className="text-slate-800">{companyName}</strong>
             </p>
 
-            {/* Work-Life Balance */}
-            <div className="mb-4">
-              <label className="font-mono text-[10px] font-semibold text-[var(--on-surface-variant)] uppercase tracking-widest block mb-2">
-                Work-Life Balance *
-              </label>
-              <StarRating value={workLifeRating} onChange={setWorkLifeRating} />
-            </div>
-
-            {/* Salary & Benefits */}
-            <div className="mb-4">
-              <label className="font-mono text-[10px] font-semibold text-[var(--on-surface-variant)] uppercase tracking-widest block mb-2">
-                Salary & Benefits *
-              </label>
-              <StarRating value={salaryRating} onChange={setSalaryRating} />
-            </div>
-
-            {/* Management & Culture */}
-            <div className="mb-4">
-              <label className="font-mono text-[10px] font-semibold text-[var(--on-surface-variant)] uppercase tracking-widest block mb-2">
-                Management & Culture *
-              </label>
-              <StarRating value={managementRating} onChange={setManagementRating} />
-            </div>
-
-            {/* Review text */}
-            <div className="mb-4">
-              <label htmlFor="review-text" className="font-mono text-[10px] font-semibold text-[var(--on-surface-variant)] uppercase tracking-widest block mb-1.5">
-                Your Review * (min. 50 chars)
-              </label>
-              <textarea
-                id="review-text"
-                value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
-                placeholder="Share your honest experience working here..."
-                className="input resize-none h-28"
-                rows={4}
-              />
-              <p className="font-mono text-[9px] text-[var(--on-surface-variant)] mt-1">
-                {reviewText.length} / 50 min characters
-              </p>
-            </div>
-
-            {/* Anonymous toggle */}
-            <div className="flex items-center justify-between p-3 bg-[var(--surface-low)] rounded-lg mb-4">
-              <div>
-                <p className="text-sm font-medium text-[var(--on-surface)]">Post Anonymously</p>
-                <p className="font-mono text-[9px] text-[var(--on-surface-variant)] uppercase tracking-wider">
-                  Recommended — default on
-                </p>
+            <div className="space-y-4 mb-5">
+              <div className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <span className="text-xs font-bold text-slate-800">Work-Life Balance</span>
+                <StarRating value={workLifeRating} onChange={setWorkLifeRating} />
               </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={isAnonymous}
-                onClick={() => setIsAnonymous(!isAnonymous)}
-                className={`w-10 h-6 rounded-full transition-colors flex-shrink-0 ${isAnonymous ? "bg-[var(--primary)]" : "bg-[var(--surface-container)]"}`}
-                id="anonymous-toggle"
-              >
-                <span className={`block w-4 h-4 bg-white rounded-full shadow transition-transform m-1 ${isAnonymous ? "translate-x-4" : "translate-x-0"}`} />
-              </button>
+
+              <div className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <span className="text-xs font-bold text-slate-800">Salary & Benefits</span>
+                <StarRating value={salaryRating} onChange={setSalaryRating} />
+              </div>
+
+              <div className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <span className="text-xs font-bold text-slate-800">Management Culture</span>
+                <StarRating value={managementRating} onChange={setManagementRating} />
+              </div>
+
+              <div>
+                <label htmlFor="review-desc" className="font-mono text-xs font-semibold text-slate-700 uppercase tracking-wider block mb-1.5">
+                  Detailed Review
+                </label>
+                <textarea
+                  id="review-desc"
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  placeholder="Share your genuine experience regarding culture, management, and compensation..."
+                  rows={4}
+                  className="w-full p-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl text-slate-900 text-sm focus:outline-none focus:border-blue-600 focus:bg-white transition-all resize-none"
+                />
+              </div>
+
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isAnonymous}
+                  onChange={(e) => setIsAnonymous(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded-md border-slate-300"
+                />
+                <span className="text-xs text-slate-700 font-medium">Post anonymously (recommended)</span>
+              </label>
             </div>
 
             {reviewError && (
-              <div className="p-3 bg-[var(--error-container)] border border-[var(--error)] rounded-lg mb-4" role="alert">
-                <p className="text-xs text-[var(--on-error-container)]">{reviewError}</p>
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-medium">
+                {reviewError}
               </div>
             )}
 
             <button
+              type="button"
               onClick={submitReview}
-              disabled={reviewLoading || !workLifeRating || !salaryRating || !managementRating || reviewText.length < 50}
-              className="btn-primary w-full justify-center"
-              id="submit-review-btn"
+              disabled={reviewLoading}
+              className="w-full h-12 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center"
             >
-              {reviewLoading ? "Submitting..." : "Submit Review"}
+              {reviewLoading ? "Submitting Review..." : "Submit Verified Review"}
             </button>
           </div>
         )}

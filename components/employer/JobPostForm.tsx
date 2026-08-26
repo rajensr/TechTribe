@@ -4,6 +4,7 @@
 // Salary mandatory — form block hobe without salary
 
 import { useState } from "react";
+import { CheckIcon } from "@/components/Icons";
 
 // BDT format helper
 function formatBDT(amount: number) {
@@ -207,16 +208,15 @@ export default function JobPostForm() {
 
         {/* ─── ACTION BUTTONS ─────────────────────────────────────────── */}
         <div className="flex items-center justify-between mt-6 pt-4 border-t border-[var(--outline-variant)]">
-          <p className="font-mono text-[10px] text-[var(--on-surface-variant)] uppercase tracking-wider flex items-center gap-1">
-            <span aria-hidden="true">⟳</span>
-            Saves automatically
+          <p className="font-mono text-xs text-[var(--on-surface-variant)] uppercase tracking-wider flex items-center gap-1">
+            <span>Saves automatically</span>
           </p>
           <div className="flex gap-3">
             <button
               type="button"
               onClick={() => handlePublish("DRAFT")}
               disabled={loading}
-              className="btn-ghost text-sm"
+              className="btn-ghost text-sm h-11 px-4"
               id="save-draft-btn"
             >
               Save as Draft
@@ -225,7 +225,7 @@ export default function JobPostForm() {
               type="button"
               onClick={() => handlePublish("PUBLISHED")}
               disabled={loading || !formComplete}
-              className="btn-primary text-sm"
+              className="btn-primary text-sm h-11 px-6 font-semibold active:scale-95 transition-all shadow-xs"
               id="publish-job-btn"
             >
               {loading ? "Publishing..." : "Publish Job"}
@@ -238,11 +238,11 @@ export default function JobPostForm() {
       {/* Real-time preview of the job card — stitch mockup */}
       <div>
         <h2 className="font-semibold text-[var(--on-surface)] mb-4">Live Preview</h2>
-        <div className="card">
+        <div className="card border-[var(--outline-variant)] p-5">
           <div className="flex items-start gap-4">
             {/* Company logo placeholder */}
-            <div className="w-10 h-10 rounded-lg border border-[var(--outline-variant)] bg-[var(--surface-low)] flex items-center justify-center flex-shrink-0">
-              <span className="font-mono text-xs text-[var(--on-surface-variant)]">Co</span>
+            <div className="w-10 h-10 rounded-xl border border-[var(--outline-variant)] bg-[var(--surface-low)] flex items-center justify-center flex-shrink-0">
+              <span className="font-mono text-xs font-bold text-[var(--primary)]">Co</span>
             </div>
 
             <div className="flex-1">
@@ -252,12 +252,12 @@ export default function JobPostForm() {
                   {jobTitle || "Job Title Preview"}
                 </span>
                 {formComplete && (
-                  <span className="badge text-[10px] px-2 py-0.5">New</span>
+                  <span className="badge text-xs px-2 py-0.5">New</span>
                 )}
               </div>
 
               {/* Meta */}
-              <p className="font-mono text-[10px] text-[var(--on-surface-variant)] uppercase tracking-wider mb-3">
+              <p className="font-mono text-xs text-[var(--on-surface-variant)] uppercase tracking-wider mb-3">
                 TechTribe HQ • Dhaka, BD • Full-time
               </p>
 
@@ -265,21 +265,21 @@ export default function JobPostForm() {
               {stackTags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {stackTags.map((tag) => (
-                    <span key={tag} className="badge">{tag}</span>
+                    <span key={tag} className="badge text-xs">{tag}</span>
                   ))}
                 </div>
               )}
 
               {/* Salary range preview */}
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-[var(--primary)] text-sm">
+                <span className="font-mono font-bold text-[var(--primary)] text-sm tabular-nums">
                   {salaryMinNum > 0 && salaryMaxNum > 0
                     ? `${formatBDT(salaryMinNum)} – ${formatBDT(salaryMaxNum)}/month`
                     : "৳0 – ৳0 /month"}
                 </span>
-                <div className="flex items-center gap-1 text-[var(--primary)]">
-                  <span className="text-xs" aria-hidden="true">✓</span>
-                  <span className="font-mono text-[10px] uppercase tracking-wide">Verified Salary</span>
+                <div className="flex items-center gap-1.5 text-[var(--primary)]">
+                  <CheckIcon className="w-4 h-4 text-[var(--primary)]" />
+                  <span className="font-mono text-xs uppercase tracking-wide">Verified Salary</span>
                 </div>
               </div>
             </div>
